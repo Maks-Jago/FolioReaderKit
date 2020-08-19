@@ -20,7 +20,6 @@ let package = Package(
         .package(name: "ZFDragableModalTransition", url: "https://github.com/Maks-Jago/ZFDragableModalTransition.git", .branch("master")),
         .package(name: "AEXML", url: "https://github.com/tadija/AEXML.git", from: "4.2.2"),
         .package(name: "FontBlaster", url: "https://github.com/ArtSabintsev/FontBlaster.git", from: "5.1.1"),
-        .package(name: "JSQWebViewController", url: "https://github.com/fantim/JSQWebViewController.git", from: "6.1.1"),
         .package(name: "realm-cocoa", url: "https://github.com/realm/realm-cocoa.git", from: "3.17.3"),
     ],
     targets: [
@@ -32,7 +31,6 @@ let package = Package(
                 "ZFDragableModalTransition",
                 "AEXML",
                 "FontBlaster",
-                "JSQWebViewController",
                 "realm-cocoa"
             ],
             path: "Source"
