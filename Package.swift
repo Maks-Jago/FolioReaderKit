@@ -26,7 +26,7 @@ let package = Package(
     targets: [
         .target(
             name: "FolioReaderKit",
-            path: "Sources"
+            path: "Source"
         ),
     ]
 )
