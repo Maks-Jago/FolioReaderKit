@@ -31,7 +31,7 @@ let package = Package(
                 "ZFDragableModalTransition",
                 "AEXML",
                 "FontBlaster",
-                "Realm"
+                "RealmSwift"
             ],
             path: "Source"
         ),
