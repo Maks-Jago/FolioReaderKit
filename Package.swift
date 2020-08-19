@@ -33,7 +33,8 @@ let package = Package(
                 "FontBlaster",
                 "Realm"
             ],
-            path: "Source"
+            path: "Source",
+            linkerSettings: [.linkedFramework("RealmSwift")]
         ),
     ]
 )
