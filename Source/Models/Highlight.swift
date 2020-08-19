@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import RealmSwift
+import Realm
 
 /// A Highlight object
 open class Highlight: Object {

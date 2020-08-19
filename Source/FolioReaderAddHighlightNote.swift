@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import RealmSwift
+import Realm
 
 class FolioReaderAddHighlightNote: UIViewController {
 
