@@ -22,5 +22,11 @@ let package = Package(
         .package(url: "https://github.com/ArtSabintsev/FontBlaster.git", from: "5.1.1"),
         .package(url: "https://github.com/fantim/JSQWebViewController.git", from: "6.1.1"),
         .package(url: "https://github.com/realm/realm-cocoa.git", from: "3.17.3"),
+    ],
+    targets: [
+        .target(
+            name: "FolioReaderKit",
+            path: "Sources"
+        ),
     ]
 )
