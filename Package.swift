@@ -15,17 +15,26 @@ let package = Package(
             targets: ["FolioReaderKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/ZipArchive/ZipArchive.git", from: "2.1.5"),
-        .package(url: "https://github.com/cxa/MenuItemKit.git", from: "4.0.1"),
-        .package(url: "https://github.com/zoonooz/ZFDragableModalTransition.git", .branch("master")),
-        .package(url: "https://github.com/tadija/AEXML.git", from: "4.2.2"),
-        .package(url: "https://github.com/ArtSabintsev/FontBlaster.git", from: "5.1.1"),
-        .package(url: "https://github.com/fantim/JSQWebViewController.git", from: "6.1.1"),
-        .package(url: "https://github.com/realm/realm-cocoa.git", from: "3.17.3"),
+        .package(name: "ZipArchive", url: "https://github.com/ZipArchive/ZipArchive.git", from: "2.1.5"),
+        .package(name: "MenuItemKit", url: "https://github.com/cxa/MenuItemKit.git", from: "4.0.1"),
+        .package(name: "ZFDragableModalTransition", url: "https://github.com/zoonooz/ZFDragableModalTransition.git", .branch("master")),
+        .package(name: "AEXML", url: "https://github.com/tadija/AEXML.git", from: "4.2.2"),
+        .package(name: "FontBlaster", url: "https://github.com/ArtSabintsev/FontBlaster.git", from: "5.1.1"),
+        .package(name: "JSQWebViewController", url: "https://github.com/fantim/JSQWebViewController.git", from: "6.1.1"),
+        .package(name: "realm-cocoa", url: "https://github.com/realm/realm-cocoa.git", from: "3.17.3"),
     ],
     targets: [
         .target(
             name: "FolioReaderKit",
+            dependencies: [
+                .byName(name: "ZipArchive"),
+                .byName(name: "MenuItemKit"),
+                .byName(name: "ZFDragableModalTransition"),
+                .byName(name: "AEXML"),
+                .byName(name: "FontBlaster"),
+                .byName(name: "JSQWebViewController"),
+                .byName(name: "realm-cocoa")
+            ],
             path: "Source"
         ),
     ]
