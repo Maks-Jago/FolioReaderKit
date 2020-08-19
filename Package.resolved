@@ -1,0 +1,70 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "AEXML",
+        "repositoryURL": "https://github.com/tadija/AEXML.git",
+        "state": {
+          "branch": null,
+          "revision": "8623e73b193386909566a9ca20203e33a09af142",
+          "version": "4.5.0"
+        }
+      },
+      {
+        "package": "FontBlaster",
+        "repositoryURL": "https://github.com/ArtSabintsev/FontBlaster.git",
+        "state": {
+          "branch": null,
+          "revision": "1f0856f10a7ce3821e36236ee597bdbacce049bc",
+          "version": "5.1.1"
+        }
+      },
+      {
+        "package": "MenuItemKit",
+        "repositoryURL": "https://github.com/cxa/MenuItemKit.git",
+        "state": {
+          "branch": null,
+          "revision": "f9c40c444b0e2fc952cd3c8c6f4b0d30181dcb10",
+          "version": "4.0.1"
+        }
+      },
+      {
+        "package": "Realm",
+        "repositoryURL": "https://github.com/realm/realm-cocoa.git",
+        "state": {
+          "branch": null,
+          "revision": "40732f2ec0cdc32d9d3df8219b2e655deb3077f1",
+          "version": "3.21.0"
+        }
+      },
+      {
+        "package": "RealmCore",
+        "repositoryURL": "https://github.com/realm/realm-core",
+        "state": {
+          "branch": null,
+          "revision": "512dfaa4f59930e193c92e00ba1924bde69b19de",
+          "version": "5.23.5"
+        }
+      },
+      {
+        "package": "ZFDragableModalTransition",
+        "repositoryURL": "https://github.com/Maks-Jago/ZFDragableModalTransition.git",
+        "state": {
+          "branch": "master",
+          "revision": "449e6529babf7c13c391f516b7f5fe892539c665",
+          "version": null
+        }
+      },
+      {
+        "package": "ZipArchive",
+        "repositoryURL": "https://github.com/Maks-Jago/ZipArchive.git",
+        "state": {
+          "branch": "master",
+          "revision": "f09c0f589bb90765e0b3a00cd0ed03d5be394c76",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
