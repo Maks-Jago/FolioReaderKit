@@ -27,13 +27,13 @@ let package = Package(
         .target(
             name: "FolioReaderKit",
             dependencies: [
-                .byName(name: "ZipArchive"),
-                .byName(name: "MenuItemKit"),
-                .byName(name: "ZFDragableModalTransition"),
-                .byName(name: "AEXML"),
-                .byName(name: "FontBlaster"),
-                .byName(name: "JSQWebViewController"),
-                .byName(name: "realm-cocoa")
+                "ZipArchive",
+                "MenuItemKit",
+                "ZFDragableModalTransition",
+                "AEXML",
+                "FontBlaster",
+                "JSQWebViewController",
+                "realm-cocoa"
             ],
             path: "Source"
         ),
