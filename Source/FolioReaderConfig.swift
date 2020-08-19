@@ -8,7 +8,7 @@
 
 import UIKit
 
-import Realm
+import RealmSwift
 
 // MARK: - FolioReaderScrollDirection
 
