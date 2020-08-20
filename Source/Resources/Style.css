@@ -136,6 +136,11 @@ img, svg, audio, video {
     box-sizing: border-box;
     object-fit: contain;
     page-break-inside: avoid;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 /* End Ted */
