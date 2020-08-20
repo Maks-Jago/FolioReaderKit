@@ -9,6 +9,30 @@
 import UIKit
 import FontBlaster
 
+@available(iOS 13.0, *)
+class FolioReaderNavigationBar: UINavigationBar {
+    
+    var barColor: UIColor = .white {
+        didSet {
+            self.standardAppearance.backgroundColor = barColor
+        }
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        
+        let coloredAppearance = UINavigationBarAppearance()
+        coloredAppearance.configureWithOpaqueBackground()
+        coloredAppearance.backgroundColor = .white
+        
+        self.standardAppearance = coloredAppearance
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
 /// Reader container
 open class FolioReaderContainer: UIViewController {
     var shouldHideStatusBar = true
@@ -132,7 +156,14 @@ open class FolioReaderContainer: UIViewController {
         self.centerViewController = FolioReaderCenter(withContainer: self)
 
         if let rootViewController = self.centerViewController {
-            self.centerNavigationController = UINavigationController(rootViewController: rootViewController)
+            if #available(iOS 13.0, *) {
+                let navController = UINavigationController(navigationBarClass: FolioReaderNavigationBar.self, toolbarClass: nil)
+                navController.viewControllers = [rootViewController]
+                
+                self.centerNavigationController = navController
+            } else {
+                self.centerNavigationController = UINavigationController(rootViewController: rootViewController)
+            }
         }
 
         self.centerNavigationController?.setNavigationBarHidden(self.readerConfig.shouldHideNavigationOnTap, animated: false)

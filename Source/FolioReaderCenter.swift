@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import ZFDragableModalTransition
 
 /// Protocol which is used from `FolioReaderCenter`s.
 @objc public protocol FolioReaderCenterDelegate: class {
@@ -55,7 +54,6 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     var pages: [String]!
     var totalPages: Int = 0
     var tempFragment: String?
-    var animator: ZFModalTransitionAnimator!
     var pageIndicatorView: FolioReaderPageIndicator?
     var pageIndicatorHeight: CGFloat = 20
     var recentlyScrolled = false
@@ -1351,17 +1349,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         hideBars()
 
         let menu = FolioReaderFontsMenu(folioReader: folioReader, readerConfig: readerConfig)
-        menu.modalPresentationStyle = .custom
-
-        animator = ZFModalTransitionAnimator(modalViewController: menu)
-        animator.isDragable = false
-        animator.bounces = false
-        animator.behindViewAlpha = 0.4
-        animator.behindViewScale = 1
-        animator.transitionDuration = 0.6
-        animator.direction = ZFModalTransitonDirection.bottom
-
-        menu.transitioningDelegate = animator
+        menu.modalPresentationStyle = .overCurrentContext
         self.present(menu, animated: true, completion: nil)
     }
 
@@ -1373,17 +1361,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         hideBars()
 
         let menu = FolioReaderPlayerMenu(folioReader: folioReader, readerConfig: readerConfig)
-        menu.modalPresentationStyle = .custom
-
-        animator = ZFModalTransitionAnimator(modalViewController: menu)
-        animator.isDragable = true
-        animator.bounces = false
-        animator.behindViewAlpha = 0.4
-        animator.behindViewScale = 1
-        animator.transitionDuration = 0.6
-        animator.direction = ZFModalTransitonDirection.bottom
-
-        menu.transitioningDelegate = animator
+        menu.modalPresentationStyle = .overCurrentContext
         present(menu, animated: true, completion: nil)
     }
 

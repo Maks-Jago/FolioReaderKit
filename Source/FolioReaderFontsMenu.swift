@@ -99,7 +99,14 @@ class FolioReaderFontsMenu: UIViewController, SMSegmentViewDelegate, UIGestureRe
         // Menu view
         var visibleHeight: CGFloat = self.readerConfig.canChangeScrollDirection ? 222 : 170
         visibleHeight = self.readerConfig.canChangeFontStyle ? visibleHeight : visibleHeight - 55
-        menuView = UIView(frame: CGRect(x: 0, y: view.frame.height-visibleHeight, width: view.frame.width, height: view.frame.height))
+        
+        var safeAreaOffset: CGFloat = 0
+        
+        if #available(iOS 11.0, *) {
+            safeAreaOffset = UIApplication.shared.keyWindow?.safeAreaInsets.bottom ?? 0
+        }
+        
+        menuView = UIView(frame: CGRect(x: 0, y: view.frame.height-visibleHeight-safeAreaOffset, width: view.frame.width, height: view.frame.height))
         menuView.backgroundColor = self.folioReader.isNight(self.readerConfig.nightModeMenuBackground, UIColor.white)
         menuView.autoresizingMask = .flexibleWidth
         menuView.layer.shadowColor = UIColor.black.cgColor
