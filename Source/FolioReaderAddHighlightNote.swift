@@ -18,6 +18,7 @@ class FolioReaderAddHighlightNote: UIViewController {
     var highlightSaved = false
     var isEditHighlight = false
     var resizedTextView = false
+    var isNight = false
     
     private var folioReader: FolioReader
     private var readerConfig: FolioReaderConfig
@@ -78,9 +79,10 @@ class FolioReaderAddHighlightNote: UIViewController {
         scrollView.delegate = self as UIScrollViewDelegate
         scrollView.contentSize = CGSize.init(width: view.frame.width, height: view.frame.height )
         scrollView.bounces = false
+        scrollView.backgroundColor = folioReader.isNight(self.readerConfig.nightModeNavBackground, self.readerConfig.daysModeNavBackground)
         
         containerView = UIView()
-        containerView.backgroundColor = .white
+        containerView.backgroundColor = folioReader.isNight(self.readerConfig.nightModeNavBackground, self.readerConfig.daysModeNavBackground)
         scrollView.addSubview(containerView)
         view.addSubview(scrollView)
         
@@ -96,13 +98,13 @@ class FolioReaderAddHighlightNote: UIViewController {
         textView = UITextView()
         textView.delegate = self
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.textColor = .black
+        textView.textColor = folioReader.isNight(UIColor.white, UIColor.black)
         textView.backgroundColor = .clear
         textView.font = UIFont.boldSystemFont(ofSize: 15)
         containerView.addSubview(textView)
         
         if isEditHighlight {
-             textView.text = highlight.noteForHighlight
+            textView.text = highlight.noteForHighlight
         }
         
         let leftConstraint = NSLayoutConstraint(item: textView!, attribute: .left, relatedBy: .equal, toItem: containerView, attribute: .left, multiplier: 1.0, constant: 20)
@@ -118,6 +120,7 @@ class FolioReaderAddHighlightNote: UIViewController {
         highlightLabel.numberOfLines = 3
         highlightLabel.font = UIFont.systemFont(ofSize: 15)
         highlightLabel.text = highlight.content.stripHtml().truncate(250, trailing: "...").stripLineBreaks()
+        highlightLabel.textColor = folioReader.isNight(UIColor.white, UIColor.black)
         
         containerView.addSubview(self.highlightLabel!)
         
@@ -198,7 +201,10 @@ extension FolioReaderAddHighlightNote: UITextViewDelegate {
         textView.frame.size.height = textView.frame.height + 30
 
         if resizedTextView {
-            scrollView.scrollRectToVisible(textView.frame, animated: true)
+            var frame = textView.frame
+            frame.size.height = textView.contentSize.height + 30
+            
+            scrollView.scrollRectToVisible(frame, animated: true)
         }
         else{
             resizedTextView = true

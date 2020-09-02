@@ -1337,7 +1337,15 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         pageController.viewControllerTwo = highlight
         pageController.segmentedControlItems = [readerConfig.localizedContentsTitle, readerConfig.localizedHighlightsTitle]
 
-        let nav = UINavigationController(rootViewController: pageController)
+        var nav = UINavigationController(rootViewController: pageController)
+        
+        if #available(iOS 13.0, *) {
+            let navController = UINavigationController(navigationBarClass: FolioReaderNavigationBar.self, toolbarClass: nil)
+            navController.viewControllers = [pageController]
+            
+            nav = navController
+        }
+        
         present(nav, animated: true, completion: nil)
     }
 
@@ -1384,9 +1392,18 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     func presentAddHighlightNote(_ highlight: Highlight, edit: Bool) {
         let addHighlightView = FolioReaderAddHighlightNote(withHighlight: highlight, folioReader: folioReader, readerConfig: readerConfig)
         addHighlightView.isEditHighlight = edit
-        let nav = UINavigationController(rootViewController: addHighlightView)
-        nav.modalPresentationStyle = .formSheet
+        addHighlightView.isNight = self.folioReader.nightMode == true
         
+        var nav = UINavigationController(rootViewController: addHighlightView)
+        
+        if #available(iOS 13.0, *) {
+            let navController = UINavigationController(navigationBarClass: FolioReaderNavigationBar.self, toolbarClass: nil)
+            navController.viewControllers = [addHighlightView]
+            
+            nav = navController
+        }
+        
+        nav.modalPresentationStyle = .formSheet
         present(nav, animated: true, completion: nil)
     }
 }
