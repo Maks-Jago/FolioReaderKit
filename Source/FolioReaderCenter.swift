@@ -243,8 +243,14 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     }
 
     fileprivate func frameForScrollScrubber() -> CGRect {
-        let scrubberY: CGFloat = ((self.readerConfig.shouldHideNavigationOnTap == true || self.readerConfig.hideBars == true) ? 50 : 74)
-        return CGRect(x: self.pageWidth + 10, y: scrubberY, width: 40, height: (self.pageHeight - 100))
+        var scrubberY: CGFloat = ((self.readerConfig.shouldHideNavigationOnTap == true || self.readerConfig.hideBars == true) ? 50 : 74)
+        let offset: CGFloat = 10
+        
+        if #available(iOS 11.0, *) {
+            scrubberY = (navigationController?.navigationBar.bounds.height ?? 0) + (UIApplication.shared.keyWindow?.safeAreaInsets.top ?? 0) + offset
+        }
+        
+        return CGRect(x: self.pageWidth + 10, y: scrubberY, width: 40, height: view.bounds.height - scrubberY - frameForPageIndicatorView().height)
     }
 
     func configureNavBar() {
