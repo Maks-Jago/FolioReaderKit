@@ -217,16 +217,8 @@ open class FolioReaderPage: UICollectionViewCell, UIWebViewDelegate, UIGestureRe
                 audioPlayer.readCurrentSentence()
             }
         }
-
-        let direction: ScrollDirection = self.folioReader.needsRTLChange ? .positive(withConfiguration: self.readerConfig) : .negative(withConfiguration: self.readerConfig)
-        print("direction: \(self.folioReader.readerCenter?.pageScrollDirection)")
         
-        if (scrollDirection == direction &&
-            self.folioReader.readerCenter?.isScrolling == true
-//            && self.readerConfig.scrollDirection != .horizontalWithVerticalContent
-//            && self.folioReader.readerCenter?.pageScrollDirection == .down
-            ) {
-            print("scrollPageToBottom, page: \(pageNumber)")
+        if (scrollDirection == .down || scrollDirection == .left) && folioReader.readerCenter?.isScrolling == true {
             scrollPageToBottom()
         }
 
@@ -422,14 +414,17 @@ open class FolioReaderPage: UICollectionViewCell, UIWebViewDelegate, UIGestureRe
     /**
      Scrolls the page to bottom
      */
+        
     open func scrollPageToBottom() {
         guard let webView = webView else { return }
-        let bottomOffset = self.readerConfig.isDirection(
-            CGPoint(x: 0, y: webView.scrollView.contentSize.height - webView.scrollView.bounds.height),
-            CGPoint(x: webView.scrollView.contentSize.width - webView.scrollView.bounds.width, y: 0),
-            CGPoint(x: webView.scrollView.contentSize.width - webView.scrollView.bounds.width, y: 0)
-        )
 
+        var bottomOffset: CGPoint = .zero
+        if scrollDirection == .down {
+            bottomOffset = CGPoint(x: 0, y: webView.scrollView.contentSize.height - webView.scrollView.bounds.height)
+        } else {
+            bottomOffset = CGPoint(x: webView.scrollView.contentSize.width - webView.scrollView.bounds.width, y: 0)
+        }
+        
         if bottomOffset.forDirection(withConfiguration: self.readerConfig) >= 0 {
             DispatchQueue.main.async {
                 self.webView?.scrollView.setContentOffset(bottomOffset, animated: false)

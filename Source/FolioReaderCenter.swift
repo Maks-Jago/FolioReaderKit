@@ -68,11 +68,8 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     var currentPageNumber: Int = 0
     var pageWidth: CGFloat = 0.0
     var pageHeight: CGFloat = 0.0
-    var currentScrollType: ScrollType = .page
-//    var lastCellFrame: CGRect = .zero
     
     fileprivate var screenBounds: CGRect!
-    fileprivate var pointNow = CGPoint.zero
     fileprivate var pageOffsetRate: CGFloat = 0
     fileprivate var tempReference: FRTocReference?
     fileprivate var isFirstLoad = true
@@ -455,47 +452,18 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     }
 
     public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-        
         let targetPoint = targetContentOffset.pointee
         let currentPoint = scrollView.contentOffset
         
-        pointNow = targetContentOffset.pointee
+        let isCollectionScrollView = (scrollView is UICollectionView)
+        let scrollType: ScrollType = ((isCollectionScrollView == true) ? .chapter : .page)
         
         if targetPoint.y > currentPoint.y {
-            self.pageScrollDirection = .positive(withConfiguration: self.readerConfig, scrollType: currentScrollType)
-            print("down")
-        }
-        else {
-            print("up")
-            self.pageScrollDirection = .negative(withConfiguration: self.readerConfig, scrollType: currentScrollType)
+            self.pageScrollDirection = .positive(withConfiguration: self.readerConfig, scrollType: scrollType)
+        } else {
+            self.pageScrollDirection = .negative(withConfiguration: self.readerConfig, scrollType: scrollType)
         }
     }
-    /*
-    - (void)scrollViewWillEndDragging:(UIScrollView *)scrollView withVelocity:(CGPoint)velocity targetContentOffset:(inout CGPoint *)targetContentOffset {
-    
-    CGPoint targetPoint = *targetContentOffset;
-    CGPoint currentPoint = scrollView.contentOffset;
-    
-    if (targetPoint.y > currentPoint.y) {
-    NSLog(@"up");
-    }
-    else {
-    NSLog(@"down");
-    }
-    }
-    */
-//    public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-//        print("willDisplay: \(cell)")
-//        if cell.frame.origin.y > lastCellFrame.origin.y {
-//            print("new down")
-//        } else {
-//            print("new up")
-//        }
-        
-//        collectionView.indexpa
-        
-//        lastCellFrame = cell.frame
-//    }
     
     private func configure(readerPageCell cell: FolioReaderPage?, atIndexPath indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = cell, let readerContainer = readerContainer else {
@@ -1252,7 +1220,6 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         self.isScrolling = true
         clearRecentlyScrolled()
         recentlyScrolled = true
-//        pointNow = scrollView.contentOffset
         
         if (scrollView is UICollectionView) {
             scrollView.isUserInteractionEnabled = false
@@ -1264,6 +1231,16 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         }
 
         scrollScrubber?.scrollViewWillBeginDragging(scrollView)
+
+        let isCollectionScrollView = (scrollView is UICollectionView)
+        let scrollType: ScrollType = ((isCollectionScrollView == true) ? .chapter : .page)
+        let velocity = scrollView.panGestureRecognizer.velocity(in: scrollView).y
+        
+        if velocity < 0 {
+            self.pageScrollDirection = .positive(withConfiguration: self.readerConfig, scrollType: scrollType)
+        } else if velocity > 0 {
+            self.pageScrollDirection = .negative(withConfiguration: self.readerConfig, scrollType: scrollType)
+        }
     }
 
     open func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -1304,32 +1281,6 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
                 
                 self.delegate?.pageItemChanged?(webViewPage)
             }
-        }
-
-        self.currentScrollType = scrollType
-        self.updatePageScrollDirection(inScrollView: scrollView, forScrollType: scrollType)
-//        self.pointNow = scrollView.contentOffset
-    }
-
-    private func updatePageScrollDirection(inScrollView scrollView: UIScrollView, forScrollType scrollType: ScrollType) {
-
-        let scrollViewContentOffsetForDirection = scrollView.contentOffset.forDirection(withConfiguration: self.readerConfig, scrollType: scrollType)
-        let pointNowForDirection = pointNow.forDirection(withConfiguration: self.readerConfig, scrollType: scrollType)
-        // The movement is either positive or negative. This happens if the page change isn't completed. Toggle to the other scroll direction then.
-        let isCurrentlyPositive = (self.pageScrollDirection == .left || self.pageScrollDirection == .up)
-
-//        print("scrollViewContentOffsetForDirection: \(scrollViewContentOffsetForDirection)")
-//        print("pointNowForDirection: \(pointNowForDirection)")
-        
-        
-        if (scrollViewContentOffsetForDirection < pointNowForDirection) {
-            self.pageScrollDirection = .negative(withConfiguration: self.readerConfig, scrollType: scrollType)
-        } else if (scrollViewContentOffsetForDirection > pointNowForDirection) {
-            self.pageScrollDirection = .positive(withConfiguration: self.readerConfig, scrollType: scrollType)
-        } else if (isCurrentlyPositive == true) {
-            self.pageScrollDirection = .negative(withConfiguration: self.readerConfig, scrollType: scrollType)
-        } else {
-            self.pageScrollDirection = .positive(withConfiguration: self.readerConfig, scrollType: scrollType)
         }
     }
 
