@@ -46,7 +46,8 @@ open class FolioReaderPage: UICollectionViewCell, UIWebViewDelegate, UIGestureRe
     fileprivate var colorView: UIView!
     fileprivate var shouldShowBar = true
     fileprivate var menuIsVisible = false
-
+    var scrollDirection: ScrollDirection = .up
+    
     fileprivate var readerConfig: FolioReaderConfig {
         guard let readerContainer = readerContainer else { return FolioReaderConfig() }
         return readerContainer.readerConfig
@@ -149,6 +150,9 @@ open class FolioReaderPage: UICollectionViewCell, UIWebViewDelegate, UIGestureRe
         // Insert the stored highlights to the HTML
         let tempHtmlContent = htmlContentWithInsertHighlights(htmlContent)
         // Load the html into the webview
+        
+        self.scrollDirection = self.folioReader.readerCenter?.pageScrollDirection ?? .down
+        
         webView?.alpha = 0
         webView?.loadHTMLString(tempHtmlContent, baseURL: baseURL)
     }
@@ -215,10 +219,14 @@ open class FolioReaderPage: UICollectionViewCell, UIWebViewDelegate, UIGestureRe
         }
 
         let direction: ScrollDirection = self.folioReader.needsRTLChange ? .positive(withConfiguration: self.readerConfig) : .negative(withConfiguration: self.readerConfig)
-
-        if (self.folioReader.readerCenter?.pageScrollDirection == direction &&
-            self.folioReader.readerCenter?.isScrolling == true &&
-            self.readerConfig.scrollDirection != .horizontalWithVerticalContent) {
+        print("direction: \(self.folioReader.readerCenter?.pageScrollDirection)")
+        
+        if (scrollDirection == direction &&
+            self.folioReader.readerCenter?.isScrolling == true
+//            && self.readerConfig.scrollDirection != .horizontalWithVerticalContent
+//            && self.folioReader.readerCenter?.pageScrollDirection == .down
+            ) {
+            print("scrollPageToBottom, page: \(pageNumber)")
             scrollPageToBottom()
         }
 
