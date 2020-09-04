@@ -11,10 +11,18 @@ import UIKit
 class FolioReaderPageIndicator: UIView {
     var pagesLabel: UILabel!
     var minutesLabel: UILabel!
+    
+    var chaptersLabel: UILabel!
+    
     var totalMinutes: Int!
     var totalPages: Int!
     var currentPage: Int = 1 {
-        didSet { self.reloadViewWithPage(self.currentPage) }
+        didSet { self.reloadViewWithPage(self.currentPage, chapter: self.currentChapter) }
+    }
+    
+    var totalChapters: Int = 1
+    var currentChapter: Int = 1 {
+        didSet { self.reloadViewWithPage(self.currentPage, chapter: self.currentChapter) }
     }
 
     fileprivate var readerConfig: FolioReaderConfig
@@ -36,16 +44,21 @@ class FolioReaderPageIndicator: UIView {
         layer.rasterizationScale = UIScreen.main.scale
         layer.shouldRasterize = true
 
-        pagesLabel = UILabel(frame: CGRect.zero)
+        pagesLabel = UILabel(frame: .zero)
         pagesLabel.font = UIFont(name: "Avenir-Light", size: 10)!
         pagesLabel.textAlignment = NSTextAlignment.right
         addSubview(pagesLabel)
 
-        minutesLabel = UILabel(frame: CGRect.zero)
+        minutesLabel = UILabel(frame: .zero)
         minutesLabel.font = UIFont(name: "Avenir-Light", size: 10)!
         minutesLabel.textAlignment = NSTextAlignment.right
         //        minutesLabel.alpha = 0
         addSubview(minutesLabel)
+        
+        chaptersLabel = UILabel(frame: .zero) //CGRect(origin: CGPoint(x: 10, y: 0), size: .zero))
+        chaptersLabel.font = UIFont(name: "Avenir-Light", size: 10)!
+        chaptersLabel.textAlignment = .left
+        addSubview(chaptersLabel)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -55,10 +68,13 @@ class FolioReaderPageIndicator: UIView {
     func reloadView(updateShadow: Bool) {
         minutesLabel.sizeToFit()
         pagesLabel.sizeToFit()
-
+        chaptersLabel.sizeToFit()
+        
         let fullW = pagesLabel.frame.width + minutesLabel.frame.width
         minutesLabel.frame.origin = CGPoint(x: frame.width/2-fullW/2, y: 2)
         pagesLabel.frame.origin = CGPoint(x: minutesLabel.frame.origin.x+minutesLabel.frame.width, y: 2)
+        
+        chaptersLabel.frame.origin = CGPoint(x: 10, y: 2)
         
         if updateShadow {
             layer.shadowPath = UIBezierPath(rect: bounds).cgPath
@@ -84,9 +100,10 @@ class FolioReaderPageIndicator: UIView {
 
         minutesLabel.textColor = self.folioReader.isNight(UIColor(white: 1, alpha: 0.3), UIColor(white: 0, alpha: 0.6))
         pagesLabel.textColor = self.folioReader.isNight(UIColor(white: 1, alpha: 0.6), UIColor(white: 0, alpha: 0.9))
+        chaptersLabel.textColor = self.folioReader.isNight(UIColor(white: 1, alpha: 0.3), UIColor(white: 0, alpha: 0.6))
     }
 
-    fileprivate func reloadViewWithPage(_ page: Int) {
+    fileprivate func reloadViewWithPage(_ page: Int, chapter: Int) {
         let pagesRemaining = self.folioReader.needsRTLChange ? totalPages-(totalPages-page+1) : totalPages-page
 
         if pagesRemaining == 1 {
@@ -102,6 +119,13 @@ class FolioReaderPageIndicator: UIView {
             minutesLabel.text = self.readerConfig.localizedReaderOneMinute+" ·"
         } else {
             minutesLabel.text = self.readerConfig.localizedReaderLessThanOneMinute+" ·"
+        }
+        
+        let chaptersRemaining = totalChapters - currentChapter
+        if chaptersRemaining == 1 {
+            chaptersLabel.text = self.readerConfig.localizedReaderOneChapterLeft
+        } else {
+            chaptersLabel.text = "\(chaptersRemaining) " + self.readerConfig.localizedReaderManyChaptersLeft
         }
         
         reloadView(updateShadow: false)

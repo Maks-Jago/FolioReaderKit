@@ -706,6 +706,11 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         let webViewPage = pageForOffset(pageOffSet, pageHeight: pageSize)
 
         self.pageIndicatorView?.currentPage = webViewPage
+        self.pageIndicatorView?.totalChapters = self.book.flatTableOfContents.count
+        
+        if let currentChapterIndex = self.getCurrentChapterIndex() {
+            self.pageIndicatorView?.currentChapter = currentChapterIndex
+        }
     }
 
     func pageForOffset(_ offset: CGFloat, pageHeight height: CGFloat) -> Int {
@@ -1033,6 +1038,26 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         search(book.flatTableOfContents)
 
         return foundResource
+    }
+    
+    public func getCurrentChapterIndex() -> Int? {
+        var foundIndex: Int?
+        
+        func search(_ items: [FRTocReference]) {
+            for (index, item) in items.enumerated() {
+                guard foundIndex == nil else { break }
+                
+                if let reference = book.spine.spineReferences[safe: (currentPageNumber - 1)], let resource = item.resource, resource == reference.resource {
+                    foundIndex = index + 1
+                    break
+                } else if let children = item.children, children.isEmpty == false {
+                    search(children)
+                }
+            }
+        }
+        search(book.flatTableOfContents)
+        
+        return foundIndex
     }
 
     /**
