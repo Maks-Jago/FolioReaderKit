@@ -458,10 +458,19 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         let isCollectionScrollView = (scrollView is UICollectionView)
         let scrollType: ScrollType = ((isCollectionScrollView == true) ? .chapter : .page)
         
-        if targetPoint.y > currentPoint.y {
-            self.pageScrollDirection = .positive(withConfiguration: self.readerConfig, scrollType: scrollType)
+        if readerConfig.scrollDirection == .horizontal {
+            if targetPoint.x > currentPoint.x {
+                self.pageScrollDirection = .positive(withConfiguration: self.readerConfig, scrollType: scrollType)
+            } else {
+                self.pageScrollDirection = .negative(withConfiguration: self.readerConfig, scrollType: scrollType)
+            }
+            
         } else {
-            self.pageScrollDirection = .negative(withConfiguration: self.readerConfig, scrollType: scrollType)
+            if targetPoint.y > currentPoint.y {
+                self.pageScrollDirection = .positive(withConfiguration: self.readerConfig, scrollType: scrollType)
+            } else {
+                self.pageScrollDirection = .negative(withConfiguration: self.readerConfig, scrollType: scrollType)
+            }
         }
     }
     
@@ -1234,7 +1243,11 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
 
         let isCollectionScrollView = (scrollView is UICollectionView)
         let scrollType: ScrollType = ((isCollectionScrollView == true) ? .chapter : .page)
-        let velocity = scrollView.panGestureRecognizer.velocity(in: scrollView).y
+        var velocity = scrollView.panGestureRecognizer.velocity(in: scrollView).y
+        
+        if readerConfig.scrollDirection == .horizontal {
+            velocity = scrollView.panGestureRecognizer.velocity(in: scrollView).x
+        }
         
         if velocity < 0 {
             self.pageScrollDirection = .positive(withConfiguration: self.readerConfig, scrollType: scrollType)
@@ -1252,7 +1265,6 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         scrollScrubber?.scrollViewDidScroll(scrollView)
 
         let isCollectionScrollView = (scrollView is UICollectionView)
-        let scrollType: ScrollType = ((isCollectionScrollView == true) ? .chapter : .page)
 
         // Update current reading page
         if (isCollectionScrollView == false), let page = currentPage, let webView = page.webView {

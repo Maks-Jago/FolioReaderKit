@@ -218,7 +218,7 @@ open class FolioReaderPage: UICollectionViewCell, UIWebViewDelegate, UIGestureRe
             }
         }
         
-        if (scrollDirection == .down || scrollDirection == .left) && folioReader.readerCenter?.isScrolling == true {
+        if (scrollDirection == .down || scrollDirection == .right) && folioReader.readerCenter?.isScrolling == true {
             scrollPageToBottom()
         }
 
