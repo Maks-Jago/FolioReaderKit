@@ -34,12 +34,21 @@ footer, header, hgroup, menu, nav, section {
 html {
     -webkit-text-size-adjust: none; /* Never autoresize text */
     padding: 0 0 !important;
-    overflow: hidden;
+/*    overflow: hidden;*/
+    
+/*    -webkit-column-width: 480px !important;*/
+/*    -webkit-column-count: 5 !important;*/
+/*    -webkit-column-gap: 30px;*/
+/*    column-gap: 30px;*/
+/*    -webkit-column-rule: 1px solid #ccc;*/
+/*    -moz-column-rule: 1px solid #ccc;*/
+/*    column-rule: 1px solid #ccc;*/
 }
 
 body {
     padding: 40px 20px !important;
-    overflow: hidden !important;
+    overflow: scroll !important;
+/*    overflow: hidden !important;*/
 }
 
 * {
@@ -246,11 +255,11 @@ html.nightMode .highlight-underline {border-bottom: 2px solid rgba(240, 40, 20, 
 .lora, .lora p, .lora span, .lora div { font-family: "Lora", serif !important; }
 .raleway, .raleway p, .raleway span, .raleway div { font-family: "Raleway", sans-serif !important; }
 
-html.textSizeOne, .textSizeOne body { font-size: 13px !important; }
-html.textSizeTwo, .textSizeTwo body { font-size: 15px !important; }
-html.textSizeThree, .textSizeThree body { font-size: 17px !important; }
-html.textSizeFour, .textSizeFour body { font-size: 19px !important; }
-html.textSizeFive, .textSizeFive body { font-size: 21px !important; }
+html.textSizeOne, .textSizeOne body { font-size: 12px !important; }
+html.textSizeTwo, .textSizeTwo body { font-size: 14px !important; }
+html.textSizeThree, .textSizeThree body { font-size: 16px !important; }
+html.textSizeFour, .textSizeFour body { font-size: 18px !important; }
+html.textSizeFive, .textSizeFive body { font-size: 20px !important; }
 
 h1 {
     font-size: 2em;

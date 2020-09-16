@@ -159,6 +159,19 @@ var getSelectedText = function() {
     return window.getSelection().toString();
 }
 
+var getSelectedImages = function() {
+    // get Range object
+    var range = window.getSelection().getRangeAt(0)
+    
+    // now you get a copy of the nodes that been selected
+    var fragment = range.cloneContents()
+    
+    // now you can do whatever you want with fragment,
+    // such as find img element
+    var imgs = fragment.querySelectorAll('img')
+    return imgs
+}
+
 // Method that gets the Rect of current selected text
 // and returns in a JSON format
 var getRectForSelectedText = function(elm) {
@@ -177,6 +190,10 @@ var callHighlightURL = function(elm) {
     thisHighlight = elm;
     
     window.location = URLBase + encodeURIComponent(currentHighlightRect);
+}
+
+var callImageURL = function(elm) {
+    var URLBase = "image://";
 }
 
 // Method that call that a hightlight with note was clicked

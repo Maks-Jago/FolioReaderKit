@@ -186,7 +186,10 @@ extension FolioReader {
 
             if let readerCenter = self.readerCenter {
                 UIView.animate(withDuration: 0.6, animations: {
-                    _ = readerCenter.currentPage?.webView?.js("nightMode(\(self.nightMode))")
+                    //WebViewMigration:
+                    readerCenter.currentPage?.webView?.js("nightMode(\(self.nightMode))") { _ in }
+                    
+//                    _ = readerCenter.currentPage?.webView?.js("nightMode(\(self.nightMode))")
                     readerCenter.pageIndicatorView?.reloadColors()
                     readerCenter.configureNavBar()
                     readerCenter.scrollScrubber?.reloadColors()
@@ -210,8 +213,12 @@ extension FolioReader {
             return font
         }
         set (font) {
+//            if self.defaults.value(forKey: kCurrentFontFamily) as? Int == font.rawValue {
+//                return
+//            }
             self.defaults.set(font.rawValue, forKey: kCurrentFontFamily)
-            _ = self.readerCenter?.currentPage?.webView?.js("setFontName('\(font.cssIdentifier)')")
+            //WebViewMigration:
+            self.readerCenter?.currentPage?.webView?.js("setFontName('\(font.cssIdentifier)')") { _ in }
         }
     }
 
@@ -233,7 +240,30 @@ extension FolioReader {
                 return
             }
 
-            currentPage.webView?.js("setFontSize('\(currentFontSize.cssIdentifier)')")
+            //WebViewMigration:
+            currentPage.webView?.js("setFontSize('\(currentFontSize.cssIdentifier)')") { [weak self] _ in
+//                self?.readerCenter?.currentPage?.webView?.reload()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self?.readerCenter?.currentPage?.contentDidLoad()
+                }
+                /*
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self?.readerCenter?.currentPage?.webView?.js("document.body.scrollHeight") { [weak self] result in
+                        guard
+                            let height = result as? CGFloat,
+                            let indexPath = self?.readerCenter?.collectionView.indexPath(for: currentPage) else {
+                                return
+                        }
+                        
+                        self?.readerCenter?.pageSizes[indexPath] = height
+                        self?.readerCenter?.collectionView.collectionViewLayout.invalidateLayout()
+                        print(self?.readerCenter?.currentPage?.webView?.scrollView.contentSize)
+                        print("")
+                    }
+                }
+ */
+            }
+//            currentPage.webView?.js("setFontSize('\(currentFontSize.cssIdentifier)')")
         }
     }
 

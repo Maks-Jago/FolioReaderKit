@@ -93,7 +93,8 @@ class FREpubParser: NSObject, SSZipArchiveDelegate {
             bookBasePath = kApplicationDocumentsDirectory
         }
 
-        bookBasePath = bookBasePath.appendingPathComponent(bookName)
+        bookBasePath = bookBasePath.appendingPathComponent(bookName).deletingPathExtension
+//        bookBasePath = bookBasePath.replacingOccurrences(of: ".", with: "")
 
         guard fileManager.fileExists(atPath: withEpubPath) else {
             throw FolioReaderError.bookNotAvailable

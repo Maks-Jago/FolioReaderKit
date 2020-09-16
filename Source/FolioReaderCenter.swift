@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import WebKit
 
 /// Protocol which is used from `FolioReaderCenter`s.
 @objc public protocol FolioReaderCenterDelegate: class {
@@ -32,7 +33,7 @@ import UIKit
 }
 
 /// The base reader class
-open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout/*, WKScriptMessageHandler*/ {
 
     /// This delegate receives the events from the current `FolioReaderPage`s delegate.
     open weak var delegate: FolioReaderCenterDelegate?
@@ -52,7 +53,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     let collectionViewLayout = UICollectionViewFlowLayout()
     var loadingView: UIActivityIndicatorView!
     var pages: [String]!
-    var totalPages: Int = 0
+    var totalPages: Int = 1
     var tempFragment: String?
     var pageIndicatorView: FolioReaderPageIndicator?
     var pageIndicatorHeight: CGFloat = 20
@@ -145,8 +146,8 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         var collectionViewFrame = screenBounds!
         
         if #available(iOS 11.0, *) {
-            collectionViewFrame.origin.y = navigationController?.navigationBar.bounds.height ?? 0
-            collectionViewFrame.size.height = view.bounds.height - collectionViewFrame.origin.y - frameForPageIndicatorView().height
+            collectionViewFrame.origin.y = (navigationController?.navigationBar.bounds.height ?? 0) + (UIApplication.shared.keyWindow?.safeAreaInsets.top ?? 0) + 40
+            collectionViewFrame.size.height = view.bounds.height - collectionViewFrame.origin.y - frameForPageIndicatorView().height - 50
         }
         
         collectionView = UICollectionView(frame: collectionViewFrame, collectionViewLayout: collectionViewLayout)
@@ -154,6 +155,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.isPagingEnabled = true
+        collectionView.isScrollEnabled = false
         collectionView.showsVerticalScrollIndicator = false
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.backgroundColor = background
@@ -256,7 +258,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
             scrubberY = (navigationController?.navigationBar.bounds.height ?? 0) + (UIApplication.shared.keyWindow?.safeAreaInsets.top ?? 0) + offset
         }
         
-        return CGRect(x: self.pageWidth + 10, y: scrubberY, width: 40, height: view.bounds.height - scrubberY - frameForPageIndicatorView().height)
+        return CGRect(x: self.pageWidth + 10, y: scrubberY, width: 40, height: collectionView.bounds.height - offset)
     }
 
     func configureNavBar() {
@@ -482,12 +484,10 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         cell.setup(withReaderContainer: readerContainer)
         cell.pageNumber = indexPath.row+1
         cell.webView?.scrollView.delegate = self
-        if #available(iOS 11.0, *) {
-            cell.webView?.scrollView.contentInsetAdjustmentBehavior = .never
-        }
         cell.webView?.setupScrollDirection()
         cell.webView?.frame = cell.webViewFrame()
         cell.delegate = self
+        cell.scrollDirection = self.pageScrollDirection
         cell.backgroundColor = .clear
 
         setPageProgressiveDirection(cell)
@@ -501,12 +501,58 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         let mediaOverlayStyleColors = "\"\(self.readerConfig.mediaOverlayColor.hexString(false))\", \"\(self.readerConfig.mediaOverlayColor.highlightColor().hexString(false))\""
 
         // Inject CSS
-        let jsFilePath = Bundle.frameworkBundle().path(forResource: "Bridge", ofType: "js")
-        let cssFilePath = Bundle.frameworkBundle().path(forResource: "Style", ofType: "css")
-        let cssTag = "<link rel=\"stylesheet\" type=\"text/css\" href=\"\(cssFilePath!)\">"
-        let jsTag = "<script type=\"text/javascript\" src=\"\(jsFilePath!)\"></script>" +
+        let documentDirUrl = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+    
+        let jsFilePath = Bundle.frameworkBundle().path(forResource: "Bridge", ofType: "js")!
+        let cssFilePath = Bundle.frameworkBundle().path(forResource: "Style", ofType: "css")!
+        
+        let cssTag = "<link rel=\"stylesheet\" type=\"text/css\" href=\"\(cssFilePath)\"/>"
+        let jsTag = "<script type=\"text/javascript\" src=\"\(jsFilePath)\"></script>" +
         "<script type=\"text/javascript\">setMediaOverlayStyleColors(\(mediaOverlayStyleColors))</script>"
 
+        let cssString = try! String(contentsOfFile: jsFilePath)
+        let jsString = try! String(contentsOfFile: cssFilePath)
+        
+        let cssScript = WKUserScript(source: cssString, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        let jsScript = WKUserScript(source: jsString, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        cell.webView?.configuration.userContentController.removeAllUserScripts()
+        
+        cell.webView?.configuration.userContentController.addUserScript(cssScript)
+        cell.webView?.configuration.userContentController.addUserScript(jsScript)
+        
+//        let source = "window.onload=function () {window.webkit.messageHandlers.sizeNotification.postMessage({justLoaded:true,height: document.body.scrollHeight});};"
+////        let source = "window.onload=function () {window.webkit.messageHandlers.sizeNotification.postMessage({justLoaded:true,height: document.body.scrollHeight});};"
+//        let script = WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+//
+//        let source2 = "document.body.addEventListener('resize', incrementCounter); function incrementCounter() {window.webkit.messageHandlers.sizeNotification.postMessage({height: document.body.scrollHeight});};"
+//        let script2 = WKUserScript(source: source2, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+//        cell.webView?.configuration.userContentController.addUserScript(script2)
+//        cell.webView?.configuration.userContentController.addUserScript(script)
+//
+//        cell.webView?.configuration.userContentController.add(self, name: "sizeNotification")
+//        cell.webView?.configuration.userContentController.add(self, name: "resize")
+
+        
+        let viewportScriptString = """
+        var meta = document.createElement('meta');
+        meta.setAttribute('name', 'viewport');
+        meta.setAttribute('content', 'width=device-width');
+        meta.setAttribute('initial-scale', '1.0');
+        meta.setAttribute('maximum-scale', '1.0');
+        meta.setAttribute('minimum-scale', '1.0');
+        meta.setAttribute('user-scalable', 'no');
+        meta.setAttribute('shrink-to-fit', 'no');
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        """
+        
+        //meta.setAttribute('column-width', '200px');
+        //meta.setAttribute('content', 'width=device-width');
+        
+//        let viewportScriptString = "var meta = document.createElement('meta'); meta.setAttribute('initial-scale', '1.0'); meta.setAttribute('maximum-scale', '1.0'); meta.setAttribute('minimum-scale', '1.0'); meta.setAttribute('user-scalable', 'no'); document.getElementsByTagName('head')[0].appendChild(meta);"
+        
+        let viewportScript = WKUserScript(source: viewportScriptString, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        cell.webView?.configuration.userContentController.addUserScript(viewportScript)
+        
         let toInject = "\n\(cssTag)\n\(jsTag)\n</head>"
         html = html.replacingOccurrences(of: "</head>", with: toInject)
 
@@ -522,23 +568,84 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         // Font Size
         classes += " \(folioReader.currentFontSize.cssIdentifier)"
 
-        html = html.replacingOccurrences(of: "<html ", with: "<html class=\"\(classes)\"")
-
+        html = html.replacingOccurrences(of: "<body ", with: "<body class=\"\(classes)\"")
+        html = html.replacingOccurrences(of: "<head ", with: "<head class=\"\(classes)\"")
+                        
         // Let the delegate adjust the html string
         if let modifiedHtmlContent = self.delegate?.htmlContentForPage?(cell, htmlContent: html) {
             html = modifiedHtmlContent
         }
-
-        cell.loadHTMLString(html, baseURL: URL(fileURLWithPath: resource.fullHref.deletingLastPathComponent))
+        
+        html = htmlContentWithInsertHighlights(html, pageNumber: cell.pageNumber)
+        html = html.replacingOccurrences(of: "../", with: "local-file:///")
+                
+        let tempPath = documentDirUrl
+            .appendingPathComponent(resource.href.lastPathComponent.deletingPathExtension+"_for_load."+resource.href.lastPathComponent.pathExtension)
+                
+        let fileManager = FileManager.default
+        
+        do {
+            if fileManager.isReadableFile(atPath: tempPath.absoluteString) {
+                try fileManager.removeItem(atPath: tempPath.absoluteString)
+            }
+            
+            try html.write(to: tempPath, atomically: true, encoding: .utf8)
+        } catch {
+            print(error)
+        }
+                
+        if #available(iOS 11.0, *) {
+            (cell.webView?.configuration.urlSchemeHandler(forURLScheme: "local-file") as? LocalFilesHandler)?.resource = resource
+        }
+                
+        cell.loadHTMLString(fromFile: tempPath, baseURL: documentDirUrl)
         return cell
     }
-
+    
+    private func htmlContentWithInsertHighlights(_ htmlContent: String, pageNumber: Int) -> String {
+        var tempHtmlContent = htmlContent as NSString
+        // Restore highlights
+        guard let bookId = (self.book.name as NSString?)?.deletingPathExtension else {
+            return tempHtmlContent as String
+        }
+        
+        let highlights = Highlight.allByBookId(withConfiguration: self.readerConfig, bookId: bookId, andPage: pageNumber as NSNumber?)
+        
+        if (highlights.count > 0) {
+            for item in highlights {
+                let style = HighlightStyle.classForStyle(item.type)
+                
+                var tag = ""
+                if let _ = item.noteForHighlight {
+                    tag = "<highlight id=\"\(item.highlightId!)\" onclick=\"callHighlightWithNoteURL(this);\" class=\"\(style)\">\(item.content!)</highlight>"
+                } else {
+                    tag = "<highlight id=\"\(item.highlightId!)\" onclick=\"callHighlightURL(this);\" class=\"\(style)\">\(item.content!)</highlight>"
+                }
+                
+                var locator = item.contentPre + item.content
+                locator += item.contentPost
+                locator = Highlight.removeSentenceSpam(locator) /// Fix for Highlights
+                
+                let range: NSRange = tempHtmlContent.range(of: locator, options: .literal)
+                
+                if range.location != NSNotFound {
+                    let newRange = NSRange(location: range.location + item.contentPre.count, length: item.content.count)
+                    tempHtmlContent = tempHtmlContent.replacingCharacters(in: newRange, with: tag) as NSString
+                } else {
+                    print("highlight range not found")
+                }
+            }
+        }
+        
+        return tempHtmlContent as String
+    }
+    
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         var size = CGSize(width: collectionView.frame.width, height: collectionView.frame.height)
-        
+                        
         if #available(iOS 11.0, *) {
             let orientation = UIDevice.current.orientation
-            
+
             if orientation == .portrait || orientation == .portraitUpsideDown {
                 if readerConfig.scrollDirection == .horizontal {
                     size.height = size.height - view.safeAreaInsets.bottom
@@ -682,17 +789,20 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
 
         scrollScrubber?.setSliderVal()
 
-        if let readingTime = currentPage.webView?.js("getReadingTime()") {
-            pageIndicatorView?.totalMinutes = Int(readingTime)!
-        } else {
-            pageIndicatorView?.totalMinutes = 0
+        //WebViewMigration:
+        currentPage.webView?.js("getReadingTime()") { [weak self] res in
+            if let readingTime = res as? String {
+                self?.pageIndicatorView?.totalMinutes = Int(readingTime)!
+            } else {
+                self?.pageIndicatorView?.totalMinutes = 0
+            }
+            self?.pagesForCurrentPage(currentPage)
+            
+            self?.delegate?.pageDidAppear?(currentPage)
+            self?.delegate?.pageItemChanged?(self?.getCurrentPageItemNumber() ?? 0)
+            
+            completion?()
         }
-        pagesForCurrentPage(currentPage)
-
-        delegate?.pageDidAppear?(currentPage)
-        delegate?.pageItemChanged?(self.getCurrentPageItemNumber())
-        
-        completion?()
     }
 
     func pagesForCurrentPage(_ page: FolioReaderPage?) {
@@ -1133,59 +1243,63 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     @objc func shareChapter(_ sender: UIBarButtonItem) {
         guard let currentPage = currentPage else { return }
 
-        if let chapterText = currentPage.webView?.js("getBodyText()") {
+        currentPage.webView?.js("getBodyText()") { [weak self] res in
+            guard let chapterText = res as? String, let `self` = self else {
+                return
+            }
+            
             let htmlText = chapterText.replacingOccurrences(of: "[\\n\\r]+", with: "<br />", options: .regularExpression)
-            var subject = readerConfig.localizedShareChapterSubject
+            var subject = self.readerConfig.localizedShareChapterSubject
             var html = ""
             var text = ""
             var bookTitle = ""
             var chapterName = ""
             var authorName = ""
             var shareItems = [AnyObject]()
-
+            
             // Get book title
             if let title = self.book.title {
                 bookTitle = title
                 subject += " “\(title)”"
             }
-
+            
             // Get chapter name
-            if let chapter = getCurrentChapterName() {
+            if let chapter = self.getCurrentChapterName() {
                 chapterName = chapter
             }
-
+            
             // Get author name
             if let author = self.book.metadata.creators.first {
                 authorName = author.name
             }
-
+            
             // Sharing html and text
             html = "<html><body>"
             html += "<br /><hr> <p>\(htmlText)</p> <hr><br />"
-            html += "<center><p style=\"color:gray\">"+readerConfig.localizedShareAllExcerptsFrom+"</p>"
+            html += "<center><p style=\"color:gray\">"+self.readerConfig.localizedShareAllExcerptsFrom+"</p>"
             html += "<b>\(bookTitle)</b><br />"
-            html += readerConfig.localizedShareBy+" <i>\(authorName)</i><br />"
-
-            if let bookShareLink = readerConfig.localizedShareWebLink {
+            html += self.readerConfig.localizedShareBy+" <i>\(authorName)</i><br />"
+            
+            if let bookShareLink = self.readerConfig.localizedShareWebLink {
                 html += "<a href=\"\(bookShareLink.absoluteString)\">\(bookShareLink.absoluteString)</a>"
                 shareItems.append(bookShareLink as AnyObject)
             }
-
+            
             html += "</center></body></html>"
-            text = "\(chapterName)\n\n“\(chapterText)” \n\n\(bookTitle) \n\(readerConfig.localizedShareBy) \(authorName)"
-
+            text = "\(chapterName)\n\n“\(chapterText)” \n\n\(bookTitle) \n\(self.readerConfig.localizedShareBy) \(authorName)"
+            
             let act = FolioReaderSharingProvider(subject: subject, text: text, html: html)
             shareItems.insert(contentsOf: [act, "" as AnyObject], at: 0)
-
+            
             let activityViewController = UIActivityViewController(activityItems: shareItems, applicationActivities: nil)
             activityViewController.excludedActivityTypes = [UIActivity.ActivityType.print, UIActivity.ActivityType.postToVimeo]
-
+            
             // Pop style on iPad
             if let actv = activityViewController.popoverPresentationController {
                 actv.barButtonItem = sender
             }
-
-            present(activityViewController, animated: true, completion: nil)
+            
+            self.present(activityViewController, animated: true, completion: nil)
         }
     }
 
@@ -1282,7 +1396,6 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     }
 
     open func scrollViewDidScroll(_ scrollView: UIScrollView) {
-
         if (navigationController?.isNavigationBarHidden == false) {
             self.toggleBars()
         }
@@ -1463,8 +1576,8 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
 // MARK: FolioPageDelegate
 
 extension FolioReaderCenter: FolioReaderPageDelegate {
-
-    public func pageDidLoad(_ page: FolioReaderPage) {
+    
+    public func pageDidLoad(_ page: FolioReaderPage, height: CGFloat) {
         if self.readerConfig.loadSavedPositionForCurrentBook, let position = folioReader.savedPositionForCurrentBook {
             let pageNumber = position["pageNumber"] as? Int
             let offset = self.readerConfig.isDirection(position["pageOffsetY"], position["pageOffsetX"], position["pageOffsetY"]) as? CGFloat
@@ -1497,7 +1610,9 @@ extension FolioReaderCenter: FolioReaderPageDelegate {
         }
         
         // Pass the event to the centers `pageDelegate`
-        pageDelegate?.pageDidLoad?(page)
+        pageDelegate?.pageDidLoad?(page, height: height)
+//        collectionView?.collectionViewLayout.invalidateLayout()
+//        collectionView.reloadData()
     }
     
     public func pageWillLoad(_ page: FolioReaderPage) {
@@ -1509,7 +1624,6 @@ extension FolioReaderCenter: FolioReaderPageDelegate {
         // Pass the event to the centers `pageDelegate`
         pageDelegate?.pageTap?(recognizer)
     }
-    
 }
 
 // MARK: FolioReaderChapterListDelegate

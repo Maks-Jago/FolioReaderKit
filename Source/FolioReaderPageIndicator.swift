@@ -58,6 +58,7 @@ class FolioReaderPageIndicator: UIView {
         chaptersLabel = UILabel(frame: .zero) //CGRect(origin: CGPoint(x: 10, y: 0), size: .zero))
         chaptersLabel.font = UIFont(name: "Avenir-Light", size: 10)!
         chaptersLabel.textAlignment = .left
+        chaptersLabel.alpha = 0
         addSubview(chaptersLabel)
     }
 
@@ -104,6 +105,10 @@ class FolioReaderPageIndicator: UIView {
     }
 
     fileprivate func reloadViewWithPage(_ page: Int, chapter: Int) {
+        guard totalPages > 0 else {
+            return
+        }
+        
         let pagesRemaining = self.folioReader.needsRTLChange ? totalPages-(totalPages-page+1) : totalPages-page
 
         if pagesRemaining == 1 {

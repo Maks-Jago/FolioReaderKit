@@ -124,6 +124,17 @@ class ScrollScrubber: NSObject, UIScrollViewDelegate {
         let movePosition = (height() * CGFloat(slider.value))
         let offset = readerConfig.isDirection(CGPoint(x: 0, y: movePosition), CGPoint(x: movePosition, y: 0), CGPoint(x: 0, y: movePosition))
         scrollView()?.setContentOffset(offset, animated: false)
+        //        guard let currentPage = delegate?.currentPage, let scrollView = currentPage.superview as? UIScrollView else {
+        //            slider.value = 0
+        //            return
+        //        }
+        //
+        //        let movePosition = (delegate?.currentPage?.webView?.frame.height ?? 0) * CGFloat(slider.value)
+        //        var offset = readerConfig.isDirection(CGPoint(x: 0, y: movePosition), CGPoint(x: movePosition, y: 0), CGPoint(x: 0, y: movePosition))
+        //        offset.x += currentPage.frame.origin.x
+        //        offset.y += currentPage.frame.origin.y
+        //
+        //        scrollView.setContentOffset(offset, animated: false)
     }
 
     // MARK: - show / hide
@@ -246,12 +257,12 @@ class ScrollScrubber: NSObject, UIScrollViewDelegate {
 
     fileprivate func height() -> CGFloat {
         guard let currentPage = delegate?.currentPage,
-            let pageHeight = folioReader.readerCenter?.pageHeight,
+//            let pageHeight = folioReader.readerCenter?.pageHeight,
             let webView = currentPage.webView else {
                 return 0
         }
 
-        return webView.scrollView.contentSize.height - pageHeight + 44
+        return webView.scrollView.contentSize.height - webView.bounds.height
     }
     
     fileprivate func scrollTop() -> CGFloat {
