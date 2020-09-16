@@ -484,10 +484,10 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         cell.setup(withReaderContainer: readerContainer)
         cell.pageNumber = indexPath.row+1
         cell.webView?.scrollView.delegate = self
-        cell.webView?.setupScrollDirection()
         cell.webView?.frame = cell.webViewFrame()
         cell.delegate = self
         cell.scrollDirection = self.pageScrollDirection
+        cell.webView?.setupScrollDirection()
         cell.backgroundColor = .clear
 
         setPageProgressiveDirection(cell)
@@ -503,22 +503,24 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         // Inject CSS
         let documentDirUrl = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
     
-        let jsFilePath = Bundle.frameworkBundle().path(forResource: "Bridge", ofType: "js")!
-        let cssFilePath = Bundle.frameworkBundle().path(forResource: "Style", ofType: "css")!
+//        let jsFilePath = Bundle.frameworkBundle().path(forResource: "Bridge", ofType: "js")!
+//        let cssFilePath = Bundle.frameworkBundle().path(forResource: "Style", ofType: "css")!
         
-        let cssTag = "<link rel=\"stylesheet\" type=\"text/css\" href=\"\(cssFilePath)\"/>"
-        let jsTag = "<script type=\"text/javascript\" src=\"\(jsFilePath)\"></script>" +
+//        let cssTag = "<link rel=\"stylesheet\" type=\"text/css\" href=\"\(cssFilePath)\"/>"
+        let cssTag = "<link rel=\"stylesheet\" type=\"text/css\" href=\"\(URLScheme.bundleFile.path)Style.css\"/>"
+//        let jsTag = "<script type=\"text/javascript\" src=\"\(jsFilePath)\"></script>" +
+        let jsTag = "<script type=\"text/javascript\" src=\"\(URLScheme.bundleFile.path)Bridge.js\"></script>" +
         "<script type=\"text/javascript\">setMediaOverlayStyleColors(\(mediaOverlayStyleColors))</script>"
 
-        let cssString = try! String(contentsOfFile: jsFilePath)
-        let jsString = try! String(contentsOfFile: cssFilePath)
+//        let cssString = try! String(contentsOfFile: jsFilePath)
+//        let jsString = try! String(contentsOfFile: cssFilePath)
         
-        let cssScript = WKUserScript(source: cssString, injectionTime: .atDocumentStart, forMainFrameOnly: false)
-        let jsScript = WKUserScript(source: jsString, injectionTime: .atDocumentStart, forMainFrameOnly: false)
-        cell.webView?.configuration.userContentController.removeAllUserScripts()
-        
-        cell.webView?.configuration.userContentController.addUserScript(cssScript)
-        cell.webView?.configuration.userContentController.addUserScript(jsScript)
+//        let cssScript = WKUserScript(source: cssString, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+//        let jsScript = WKUserScript(source: jsString, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+//        cell.webView?.configuration.userContentController.removeAllUserScripts()
+//
+//        cell.webView?.configuration.userContentController.addUserScript(cssScript)
+//        cell.webView?.configuration.userContentController.addUserScript(jsScript)
         
 //        let source = "window.onload=function () {window.webkit.messageHandlers.sizeNotification.postMessage({justLoaded:true,height: document.body.scrollHeight});};"
 ////        let source = "window.onload=function () {window.webkit.messageHandlers.sizeNotification.postMessage({justLoaded:true,height: document.body.scrollHeight});};"
@@ -577,7 +579,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         }
         
         html = htmlContentWithInsertHighlights(html, pageNumber: cell.pageNumber)
-        html = html.replacingOccurrences(of: "../", with: "local-file:///")
+        html = html.replacingOccurrences(of: "../", with: URLScheme.localFile.path)//"local-file:///")
                 
         let tempPath = documentDirUrl
             .appendingPathComponent(resource.href.lastPathComponent.deletingPathExtension+"_for_load."+resource.href.lastPathComponent.pathExtension)
@@ -595,7 +597,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         }
                 
         if #available(iOS 11.0, *) {
-            (cell.webView?.configuration.urlSchemeHandler(forURLScheme: "local-file") as? LocalFilesHandler)?.resource = resource
+            (cell.webView?.configuration.urlSchemeHandler(forURLScheme: URLScheme.localFile.rawValue) as? LocalFilesHandler)?.resource = resource
         }
                 
         cell.loadHTMLString(fromFile: tempPath, baseURL: documentDirUrl)
@@ -789,7 +791,6 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
 
         scrollScrubber?.setSliderVal()
 
-        //WebViewMigration:
         currentPage.webView?.js("getReadingTime()") { [weak self] res in
             if let readingTime = res as? String {
                 self?.pageIndicatorView?.totalMinutes = Int(readingTime)!

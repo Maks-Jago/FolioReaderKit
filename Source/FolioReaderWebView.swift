@@ -9,13 +9,61 @@
 import UIKit
 import WebKit
 
+enum URLScheme: String {
+    case localFile = "local-file"
+    case bundleFile = "bundle-file"
+    
+    var path: String {
+        self.rawValue + ":///"
+    }
+}
+
+@available(iOS 11.0, *)
+open class BundleFilesHandler: NSObject, WKURLSchemeHandler {
+    public var bundle: Bundle
+    
+    init(bundle: Bundle = .main) {
+        self.bundle = bundle
+    }
+    
+    public func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        guard let url = urlSchemeTask.request.url else {
+            urlSchemeTask.didFailWithError(NSError(domain: URLScheme.bundleFile.rawValue, code: -1, userInfo: nil))
+            return
+        }
+        
+        let fileName = url.lastPathComponent
+        
+        guard let fileUrl = bundle.url(forResource: fileName.deletingPathExtension, withExtension: fileName.pathExtension) else {
+            return
+        }
+        
+        guard let data = try? Data(contentsOf: fileUrl) else {
+            return
+        }
+        
+        let response = URLResponse(
+            url: urlSchemeTask.request.url!,
+            mimeType: url.mimeType(),
+            expectedContentLength: data.count,
+            textEncodingName: nil
+        )
+        
+        urlSchemeTask.didReceive(response)
+        urlSchemeTask.didReceive(data)
+        urlSchemeTask.didFinish()
+    }
+    
+    public func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
+}
+
 @available(iOS 11.0, *)
 open class LocalFilesHandler: NSObject, WKURLSchemeHandler {
-    var resource: FRResource?
+    public var resource: FRResource?
     
     public func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
         guard let resource = resource, let url = urlSchemeTask.request.url, let scheme = url.scheme else {
-            urlSchemeTask.didFailWithError(NSError(domain: "local_file", code: -1, userInfo: nil))
+            urlSchemeTask.didFailWithError(NSError(domain: URLScheme.localFile.rawValue, code: -1, userInfo: nil))
             return
         }
         
@@ -39,9 +87,7 @@ open class LocalFilesHandler: NSObject, WKURLSchemeHandler {
         urlSchemeTask.didFinish()
     }
     
-    public func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
-        print("")
-    }
+    public func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
 }
 
 /// The custom WebView used in each page
@@ -67,21 +113,17 @@ open class FolioReaderWebView: WKWebView {
         return readerContainer.folioReader
     }
 
-//    override init(frame: CGRect) {
-//        fatalError("use init(frame:readerConfig:book:) instead.")
-//    }
-
     init(frame: CGRect, readerContainer: FolioReaderContainer) {
         self.readerContainer = readerContainer
         
         let configuration = WKWebViewConfiguration()
         configuration.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
         configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-//        [theConfiguration.preferences setValue:@"TRUE" forKey:@"allowFileAccessFromFileURLs"];
         
         if #available(iOS 11.0, *) {
             configuration.dataDetectorTypes = .link
-            configuration.setURLSchemeHandler(LocalFilesHandler(), forURLScheme: "local-file")
+            configuration.setURLSchemeHandler(LocalFilesHandler(), forURLScheme: URLScheme.localFile.rawValue) //"local-file")
+            configuration.setURLSchemeHandler(BundleFilesHandler(bundle: Bundle.frameworkBundle()), forURLScheme: URLScheme.bundleFile.rawValue)
         }
         
         super.init(frame: frame, configuration: configuration)
@@ -480,7 +522,6 @@ open class FolioReaderWebView: WKWebView {
         self.evaluateJavaScript(script) { res, error in
             print("res: \(res)")
             print("error: \(error)")
-            print("")
             
             if let string = res as? String, string.isEmpty {
                 completion(nil)
@@ -488,9 +529,6 @@ open class FolioReaderWebView: WKWebView {
                 completion(res)
             }
         }
-//        let callback = self.stringByEvaluatingJavaScript(from: script)
-//        if callback!.isEmpty { return nil }
-//        return callback
     }
     
     // MARK: WebView
@@ -510,12 +548,14 @@ open class FolioReaderWebView: WKWebView {
             //WebViewMigration: pagination
 //            paginationMode = .unpaginated
 //            scrollView.bounces = true
+            print("")
             break
         case .horizontal:
 //            scrollView.isPagingEnabled = false
 //            paginationMode = .leftToRight
 //            paginationBreakingMode = .page
 //            scrollView.bounces = false
+            print("")
             break
         }
     }

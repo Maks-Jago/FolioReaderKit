@@ -89,11 +89,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
             self.contentView.addSubview(webView!)
         }
         
-        //WebViewMigration: delegate
-//        webView?.delegate = self
         webView?.navigationDelegate = self
-        
-//        webView?.scrollView.contentInsetAdjustmentBehavior = .never
 
         if colorView == nil {
             colorView = UIView()
@@ -136,17 +132,10 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         let statusbarHeight = UIApplication.shared.statusBarFrame.size.height
         let navBarHeight = self.folioReader.readerCenter?.navigationController?.navigationBar.frame.size.height ?? CGFloat(0)
         let navTotal = self.readerConfig.shouldHideNavigationOnTap ? 0 : statusbarHeight + navBarHeight
-//        var paddingTop: CGFloat = 20
-//        var paddingBottom: CGFloat = 30
-//
-//        if #available(iOS 11.0, *) {
-//            paddingBottom = UIApplication.shared.keyWindow?.safeAreaInsets.bottom ?? 0
-//            paddingTop = UIApplication.shared.keyWindow?.safeAreaInsets.top ?? 0
-//        }
         
         return CGRect(
             x: bounds.origin.x,
-            y: 0,//self.readerConfig.isDirection(bounds.origin.y + navTotal, bounds.origin.y + navTotal + paddingTop, bounds.origin.y + navTotal),
+            y: 0,
             width: bounds.width,
             height: self.readerConfig.isDirection(bounds.height, bounds.height /*- navTotal - paddingBottom*/, bounds.height - navTotal)
         )
@@ -163,9 +152,6 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         webView?.loadFileURL(fileURL, allowingReadAccessTo: baseURL)
     }
 
-    //WebViewMigration:
-//    open func webViewDidFinishLoad(_ webView: UIWebView) {
-    
     // MARK: - UIWebView Delegate
     
     @available(iOS 13.0, *)
@@ -176,8 +162,6 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
     public func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         return nil
     }
-    
-//    optional func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void)
     
     public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
         decisionHandler(.allow)
