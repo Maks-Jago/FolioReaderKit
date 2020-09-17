@@ -34,21 +34,11 @@ footer, header, hgroup, menu, nav, section {
 html {
     -webkit-text-size-adjust: none; /* Never autoresize text */
     padding: 0 0 !important;
-/*    overflow: hidden;*/
-    
-/*    -webkit-column-width: 480px !important;*/
-/*    -webkit-column-count: 5 !important;*/
-/*    -webkit-column-gap: 30px;*/
-/*    column-gap: 30px;*/
-/*    -webkit-column-rule: 1px solid #ccc;*/
-/*    -moz-column-rule: 1px solid #ccc;*/
-/*    column-rule: 1px solid #ccc;*/
 }
 
 body {
     padding: 40px 20px !important;
     overflow: scroll !important;
-/*    overflow: hidden !important;*/
 }
 
 * {
@@ -220,11 +210,7 @@ html {
     background-color: #FFFFFF !important;
 }
 
-body {
-    background-color: transparent !important;
-}
-
-html.nightMode, html.nightMode body {
+body.nightMode, body.nightMode body {
     background-color: #131313 !important;
 }
 
@@ -237,11 +223,11 @@ html.nightMode, html.nightMode body {
     color: #848484 !important;
 }
 
-html.nightMode .highlight-yellow {background:rgba(255, 235, 107, 0.9)}
-html.nightMode .highlight-green {background:rgba(192, 237, 114, 0.9)}
-html.nightMode .highlight-blue {background:rgba(173, 216, 255, 0.9)}
-html.nightMode .highlight-pink {background:rgba(255, 176, 202, 0.9)}
-html.nightMode .highlight-underline {border-bottom: 2px solid rgba(240, 40, 20, 0.6)}
+body.nightMode .highlight-yellow {background:rgba(255, 235, 107, 0.9)}
+body.nightMode .highlight-green {background:rgba(192, 237, 114, 0.9)}
+body.nightMode .highlight-blue {background:rgba(173, 216, 255, 0.9)}
+body.nightMode .highlight-pink {background:rgba(255, 176, 202, 0.9)}
+body.nightMode .highlight-underline {border-bottom: 2px solid rgba(240, 40, 20, 0.6)}
 
 
 /*

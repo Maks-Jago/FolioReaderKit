@@ -147,7 +147,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         
         if #available(iOS 11.0, *) {
             collectionViewFrame.origin.y = (navigationController?.navigationBar.bounds.height ?? 0) + (UIApplication.shared.keyWindow?.safeAreaInsets.top ?? 0) + 40
-            collectionViewFrame.size.height = view.bounds.height - collectionViewFrame.origin.y - frameForPageIndicatorView().height - 50
+            collectionViewFrame.size.height = view.bounds.height - collectionViewFrame.origin.y - frameForPageIndicatorView().height
         }
         
         collectionView = UICollectionView(frame: collectionViewFrame, collectionViewLayout: collectionViewLayout)
@@ -222,6 +222,9 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
 
         setPageSize(UIApplication.shared.statusBarOrientation)
         updateSubviewFrames()
+        
+//        let background = folioReader.isNight(self.readerConfig.nightModeBackground, UIColor.white)
+//        view.backgroundColor = background
     }
 
     // MARK: Layout
@@ -244,7 +247,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         var bounds = CGRect(x: 0, y: screenBounds.size.height-pageIndicatorHeight, width: screenBounds.size.width, height: pageIndicatorHeight)
         
         if #available(iOS 11.0, *) {
-            bounds.size.height = bounds.size.height + view.safeAreaInsets.bottom
+            bounds.size.height = bounds.size.height + (UIApplication.shared.keyWindow?.safeAreaInsets.bottom ?? 0)
         }
         
         return bounds
@@ -484,10 +487,10 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         cell.setup(withReaderContainer: readerContainer)
         cell.pageNumber = indexPath.row+1
         cell.webView?.scrollView.delegate = self
+        cell.webView?.setupScrollDirection()
         cell.webView?.frame = cell.webViewFrame()
         cell.delegate = self
         cell.scrollDirection = self.pageScrollDirection
-        cell.webView?.setupScrollDirection()
         cell.backgroundColor = .clear
 
         setPageProgressiveDirection(cell)
@@ -557,6 +560,9 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         
         let toInject = "\n\(cssTag)\n\(jsTag)\n</head>"
         html = html.replacingOccurrences(of: "</head>", with: toInject)
+        
+//        let toInjectBody = "\n\(cssTag)\n\(jsTag)\n</body>"
+//        html = html.replacingOccurrences(of: "</body>", with: toInjectBody)
 
         // Font class name
         var classes = folioReader.currentFont.cssIdentifier
@@ -570,8 +576,8 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         // Font Size
         classes += " \(folioReader.currentFontSize.cssIdentifier)"
 
-        html = html.replacingOccurrences(of: "<body ", with: "<body class=\"\(classes)\"")
-        html = html.replacingOccurrences(of: "<head ", with: "<head class=\"\(classes)\"")
+        html = html.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\" ")
+        html = html.replacingOccurrences(of: "<head", with: "<head class=\"\(classes)\" ")
                         
         // Let the delegate adjust the html string
         if let modifiedHtmlContent = self.delegate?.htmlContentForPage?(cell, htmlContent: html) {
@@ -579,10 +585,11 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         }
         
         html = htmlContentWithInsertHighlights(html, pageNumber: cell.pageNumber)
-        html = html.replacingOccurrences(of: "../", with: URLScheme.localFile.path)//"local-file:///")
+        html = html.replacingOccurrences(of: "../", with: URLScheme.localFile.path)
                 
         let tempPath = documentDirUrl
-            .appendingPathComponent(resource.href.lastPathComponent.deletingPathExtension+"_for_load."+resource.href.lastPathComponent.pathExtension)
+        .appendingPathComponent(resource.href.lastPathComponent)//.deletingPathExtension+resource.href.lastPathComponent.pathExtension)
+//            .appendingPathComponent(resource.href.lastPathComponent.deletingPathExtension+"_for_load."+resource.href.lastPathComponent.pathExtension)
                 
         let fileManager = FileManager.default
         
@@ -775,8 +782,9 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
             self.currentPageNumber = page.pageNumber
         } else {
             let currentIndexPath = getCurrentIndexPath()
+                        
             currentPage = collectionView.cellForItem(at: currentIndexPath) as? FolioReaderPage
-
+            
             self.previousPageNumber = currentIndexPath.row
             self.currentPageNumber = currentIndexPath.row+1
         }
@@ -790,20 +798,27 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         }
 
         scrollScrubber?.setSliderVal()
-
+        
         currentPage.webView?.js("getReadingTime()") { [weak self] res in
             if let readingTime = res as? String {
                 self?.pageIndicatorView?.totalMinutes = Int(readingTime)!
             } else {
                 self?.pageIndicatorView?.totalMinutes = 0
             }
-            self?.pagesForCurrentPage(currentPage)
-            
-            self?.delegate?.pageDidAppear?(currentPage)
-            self?.delegate?.pageItemChanged?(self?.getCurrentPageItemNumber() ?? 0)
-            
-            completion?()
+//            self?.pagesForCurrentPage(currentPage)
+//
+//            self?.delegate?.pageDidAppear?(currentPage)
+//            self?.delegate?.pageItemChanged?(self?.getCurrentPageItemNumber() ?? 0)
+//
+//            completion?()
         }
+        
+        self.pagesForCurrentPage(currentPage)
+        
+        self.delegate?.pageDidAppear?(currentPage)
+        self.delegate?.pageItemChanged?(self.getCurrentPageItemNumber())
+        
+        completion?()
     }
 
     func pagesForCurrentPage(_ page: FolioReaderPage?) {
@@ -1120,7 +1135,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     public func findPageByHref(_ href: String) -> Int {
         var count = 0
         for item in self.book.spine.spineReferences {
-            if item.resource.href == href {
+            if item.resource.href.lastPathComponent == href.lastPathComponent {
                 return count
             }
             count += 1

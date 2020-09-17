@@ -182,6 +182,10 @@ extension FolioReader {
     open var nightMode: Bool {
         get { return self.defaults.bool(forKey: kNightMode) }
         set (value) {
+            guard self.defaults.bool(forKey: kNightMode) != value else {
+                return
+            }
+            
             self.defaults.set(value, forKey: kNightMode)
 
             if let readerCenter = self.readerCenter {
@@ -189,7 +193,6 @@ extension FolioReader {
                     //WebViewMigration:
                     readerCenter.currentPage?.webView?.js("nightMode(\(self.nightMode))") { _ in }
                     
-//                    _ = readerCenter.currentPage?.webView?.js("nightMode(\(self.nightMode))")
                     readerCenter.pageIndicatorView?.reloadColors()
                     readerCenter.configureNavBar()
                     readerCenter.scrollScrubber?.reloadColors()
@@ -236,16 +239,16 @@ extension FolioReader {
         set (value) {
             self.defaults.set(value.rawValue, forKey: kCurrentFontSize)
 
-            guard let currentPage = self.readerCenter?.currentPage else {
-                return
-            }
+//            guard let currentPage = self.readerCenter?.currentPage else {
+//                return
+//            }
 
             //WebViewMigration:
-            currentPage.webView?.js("setFontSize('\(currentFontSize.cssIdentifier)')") { [weak self] _ in
+            self.readerCenter?.currentPage?.webView?.js("setFontSize('\(currentFontSize.cssIdentifier)')") {  _ in
 //                self?.readerCenter?.currentPage?.webView?.reload()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    self?.readerCenter?.currentPage?.contentDidLoad()
-                }
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+//                    self?.readerCenter?.currentPage?.contentDidLoad()
+//                }
                 /*
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     self?.readerCenter?.currentPage?.webView?.js("document.body.scrollHeight") { [weak self] result in

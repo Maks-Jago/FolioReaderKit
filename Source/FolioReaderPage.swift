@@ -48,6 +48,8 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
     fileprivate var shouldShowBar = true
     fileprivate var menuIsVisible = false
     var scrollDirection: ScrollDirection = .up
+    private var firstLoading: Bool = true
+    private var currentHTMLFileURL: URL? = nil
     
     fileprivate var readerConfig: FolioReaderConfig {
         guard let readerContainer = readerContainer else { return FolioReaderConfig() }
@@ -147,27 +149,32 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
     }
     
     func loadHTMLString(fromFile fileURL: URL!, baseURL: URL!) {
-        // Insert the stored highlights to the HTML
+        guard currentHTMLFileURL != fileURL else {
+            return
+        }
+        
+        currentHTMLFileURL = fileURL
         webView?.alpha = 0
         webView?.loadFileURL(fileURL, allowingReadAccessTo: baseURL)
     }
 
     // MARK: - UIWebView Delegate
     
-    @available(iOS 13.0, *)
-    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences, decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void) {
-        decisionHandler(.allow, preferences)
-    }
-    
-    public func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        return nil
-    }
-    
-    public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
-        decisionHandler(.allow)
-    }
+//    @available(iOS 13.0, *)
+//    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences, decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void) {
+//        decisionHandler(.allow, preferences)
+//    }
+//
+//    public func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+//        return nil
+//    }
+//
+//    public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+//        decisionHandler(.allow)
+//    }
     
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("didFinish navigation: \(navigation.debugDescription)")
         contentDidLoad()
     }
     
@@ -302,7 +309,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
 
             decisionHandler(.cancel)
             return
-        } else if scheme == "file" {
+        } else if (scheme == "file" || scheme == URLScheme.localFile.rawValue) {
 
             let anchorFromURL = url.fragment
 
@@ -317,33 +324,43 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
                 let path = url.path
                 let splitedPath = path.components(separatedBy: base)
 
+                 
                 // Return to avoid crash
-                if (splitedPath.count <= 1 || splitedPath[1].isEmpty) {
+//                 if (splitedPath.count <= 1 || splitedPath[1].isEmpty) {
+//                    decisionHandler(.allow)
+//                    return
+//                }
+
+                guard let href = splitedPath.last?.trimmingCharacters(in: CharacterSet(charactersIn: "/")) else {
                     decisionHandler(.allow)
                     return
                 }
-
-                let href = splitedPath[1].trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                let hrefPage = (self.folioReader.readerCenter?.findPageByHref(href) ?? 0) + 1
+                
+//                let href = splitedPath[1].trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                let hrefPage = (self.folioReader.readerCenter?.findPageByHref(href.lastPathComponent) ?? 0) + 1
 
                 if (hrefPage == pageNumber) {
                     // Handle internal #anchor
                     if anchorFromURL != nil {
                         handleAnchor(anchorFromURL!, avoidBeginningAnchors: false, animated: true)
-                        decisionHandler(.cancel)
+                        decisionHandler(.allow)
                         return
                     }
                 } else {
-                    self.folioReader.readerCenter?.changePageWith(href: href, animated: true)
+                    self.folioReader.readerCenter?.changePageWith(href: href, animated: true) { [weak self] in
+                        if let anchorFromURL = anchorFromURL {
+                            self?.handleAnchor(anchorFromURL, avoidBeginningAnchors: false, animated: true)
+                        }
+                    }
                 }
-                decisionHandler(.cancel)
+                decisionHandler(.allow)
                 return
             }
 
             // Handle internal #anchor
             if anchorFromURL != nil {
                 handleAnchor(anchorFromURL!, avoidBeginningAnchors: false, animated: true)
-                decisionHandler(.cancel)
+                decisionHandler(.allow)
                 return
             }
 
@@ -546,9 +563,13 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
      - returns: The element offset ready to scroll
      */
     func getAnchorOffset(_ anchor: String, completion: @escaping (CGFloat) -> Void) {
+        //TMP: js is crashed, getElementById() return undefined and js is crashing
+        completion(0)
+        return
+        
         let horizontal = self.readerConfig.scrollDirection == .horizontal
         
-        webView?.js("getAnchorOffset('\(anchor)', \(horizontal.description))", completion: { res in
+        webView?.js("getAnchorOffset(\"\(anchor)\", \(horizontal.description))", completion: { res in
             guard let strOffset = res as? String else {
                 completion(0)
                 return

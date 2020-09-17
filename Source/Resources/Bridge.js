@@ -55,15 +55,26 @@ function setFontName(cls) {
     removeClass(elm, "lora");
     removeClass(elm, "raleway");
     addClass(elm, cls);
+    
+    var body = document.body;
+    removeClass(body, "andada");
+    removeClass(body, "lato");
+    removeClass(body, "lora");
+    removeClass(body, "raleway");
+    addClass(body, cls);
 }
 
 // Toggle night mode
 function nightMode(enable) {
     var elm = document.documentElement;
+    var body = document.body;
+    
     if(enable) {
         addClass(elm, "nightMode");
+        addClass(body, "nightMode");
     } else {
         removeClass(elm, "nightMode");
+        removeClass(body, "nightMode");
     }
 }
 
@@ -223,11 +234,11 @@ function getReadingTime() {
  */
 var getAnchorOffset = function(target, horizontal) {
     var elem = document.getElementById(target);
-    
+
     if (!elem) {
         elem = document.getElementsByName(target)[0];
     }
-    
+        
     if (horizontal) {
         return document.body.clientWidth * Math.floor(elem.offsetTop / window.innerHeight);
     }

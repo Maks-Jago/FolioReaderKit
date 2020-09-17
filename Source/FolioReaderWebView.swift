@@ -122,14 +122,14 @@ open class FolioReaderWebView: WKWebView {
         
         if #available(iOS 11.0, *) {
             configuration.dataDetectorTypes = .link
-            configuration.setURLSchemeHandler(LocalFilesHandler(), forURLScheme: URLScheme.localFile.rawValue) //"local-file")
+            configuration.setURLSchemeHandler(LocalFilesHandler(), forURLScheme: URLScheme.localFile.rawValue)
             configuration.setURLSchemeHandler(BundleFilesHandler(bundle: Bundle.frameworkBundle()), forURLScheme: URLScheme.bundleFile.rawValue)
         }
         
         super.init(frame: frame, configuration: configuration)
         
 //        self.scrollView.isScrollEnabled = false               // Make sure our view is interactable
-//        self.scrollView.bounces = false                    // Things like this should be handled in web code
+        self.scrollView.bounces = false                    // Things like this should be handled in web code
 //        self.allowsBackForwardNavigationGestures = false   // Disable swiping to navigate
 //        self.contentMode = .scaleToFill
     }
@@ -520,8 +520,10 @@ open class FolioReaderWebView: WKWebView {
     
     open func js(_ script: String, completion: @escaping (Any?) -> Void) {
         self.evaluateJavaScript(script) { res, error in
+            print("script: \(script)")
             print("res: \(res)")
             print("error: \(error)")
+            print("-------")
             
             if let string = res as? String, string.isEmpty {
                 completion(nil)
@@ -529,6 +531,9 @@ open class FolioReaderWebView: WKWebView {
                 completion(res)
             }
         }
+//        let callback = self.stringByEvaluatingJavaScript(from: script)
+//        if callback!.isEmpty { return nil }
+//        return callback
     }
     
     // MARK: WebView
