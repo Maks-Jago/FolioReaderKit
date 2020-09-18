@@ -87,6 +87,14 @@ function setFontSize(cls) {
     removeClass(elm, "textSizeFour");
     removeClass(elm, "textSizeFive");
     addClass(elm, cls);
+    
+    var body = document.body;
+    removeClass(body, "textSizeOne");
+    removeClass(body, "textSizeTwo");
+    removeClass(body, "textSizeThree");
+    removeClass(body, "textSizeFour");
+    removeClass(body, "textSizeFive");
+    addClass(body, cls);
 }
 
 /*

@@ -105,7 +105,7 @@ class FolioReaderPageIndicator: UIView {
     }
 
     fileprivate func reloadViewWithPage(_ page: Int, chapter: Int) {
-        guard totalPages > 0 else {
+        guard totalPages > 0, totalMinutes != nil else {
             return
         }
         

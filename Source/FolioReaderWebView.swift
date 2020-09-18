@@ -549,18 +549,14 @@ open class FolioReaderWebView: WKWebView {
     func setupScrollDirection() {
         switch self.readerConfig.scrollDirection {
         case .vertical, .defaultVertical, .horizontalWithVerticalContent:
-//            scrollView.isPagingEnabled = false
+            scrollView.isPagingEnabled = false
             //WebViewMigration: pagination
 //            paginationMode = .unpaginated
 //            scrollView.bounces = true
-            print("")
             break
         case .horizontal:
-//            scrollView.isPagingEnabled = false
-//            paginationMode = .leftToRight
-//            paginationBreakingMode = .page
-//            scrollView.bounces = false
-            print("")
+            scrollView.isPagingEnabled = true
+            scrollView.bounces = false
             break
         }
     }

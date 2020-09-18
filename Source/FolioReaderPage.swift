@@ -136,7 +136,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         let navTotal = self.readerConfig.shouldHideNavigationOnTap ? 0 : statusbarHeight + navBarHeight
         
         return CGRect(
-            x: bounds.origin.x,
+            x: 0,
             y: 0,
             width: bounds.width,
             height: self.readerConfig.isDirection(bounds.height, bounds.height /*- navTotal - paddingBottom*/, bounds.height - navTotal)
@@ -158,23 +158,9 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         webView?.loadFileURL(fileURL, allowingReadAccessTo: baseURL)
     }
 
-    // MARK: - UIWebView Delegate
-    
-//    @available(iOS 13.0, *)
-//    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences, decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void) {
-//        decisionHandler(.allow, preferences)
-//    }
-//
-//    public func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-//        return nil
-//    }
-//
-//    public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
-//        decisionHandler(.allow)
-//    }
-    
+    // MARK: - WKWebView Delegate
+        
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        print("didFinish navigation: \(navigation.debugDescription)")
         contentDidLoad()
     }
     
@@ -196,7 +182,9 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         }
         
         var needScrollToBottom = false
-        if (scrollDirection == .down || scrollDirection == .right) && folioReader.readerCenter?.isScrolling == true {
+        if scrollDirection == .down && folioReader.readerCenter?.isScrolling == true {
+            needScrollToBottom = true
+        } else if scrollDirection == .right, folioReader.readerCenter?.recentlyScrolled == true {
             needScrollToBottom = true
         }
         
@@ -218,59 +206,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         }
     }
 
-    /*
-    func contentDidLoad() {
-        delegate?.pageWillLoad?(self)
-        
-        // Add the custom class based onClick listener
-        self.setupClassBasedOnClickListeners()
-        
-        refreshPageMode()
-        
-        if self.readerConfig.enableTTS && !self.book.hasAudio {
-            //WebViewMigration:
-            webView?.js("wrappingSentencesWithinPTags()") { _ in }
-            
-            if let audioPlayer = self.folioReader.readerAudioPlayer, (audioPlayer.isPlaying() == true) {
-                audioPlayer.readCurrentSentence()
-            }
-        }
-        
-        var needScrollToBottom = false
-        if (scrollDirection == .down || scrollDirection == .right) && folioReader.readerCenter?.isScrolling == true {
-            needScrollToBottom = true
-//            scrollPageToBottom()
-        }
-        
-        UIView.animate(withDuration: 0.2, animations: {self.webView?.alpha = 1}, completion: { finished in
-            self.webView?.isColors = false
-            self.webView?.createMenu(options: false)
-        })
-        
-        self.webView?.js("document.body.scrollHeight") { [weak self] result in
-            let height = (result as? CGFloat) ?? 0
-            if let `self` = self {
-                
-                self.delegate?.pageDidLoad?(self, height: height)
-                
-                if needScrollToBottom, size == -1 { //, size > self.bounds.height {
-                    delay(0.1) {
-                        if abs((self.readerContainer?.centerViewController?.currentPage?.pageNumber ?? 0) - self.pageNumber) != 1 {
-                            return
-                        } else {
-                            if self.folioReader.readerCenter?.isScrolling == false {
-                                self.scrollPageToBottom()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }*/
-
-    //WebViewMigration:
     public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-//    open func webView(_ webView: UIWebView, shouldStartLoadWith request: URLRequest, navigationType: UIWebView.NavigationType) -> Bool {
         guard
             let webView = webView as? FolioReaderWebView,
             let scheme = navigationAction.request.url?.scheme else {

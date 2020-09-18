@@ -207,9 +207,13 @@ html, body {
 }
 
 html {
-    background-color: #FFFFFF !important;
+    background-color: transparent !important;
 }
 
+html.nightMode, html.nightMode body {
+    background-color: #131313 !important;
+}
+    
 body.nightMode, body.nightMode body {
     background-color: #131313 !important;
 }
@@ -247,6 +251,13 @@ html.textSizeThree, .textSizeThree body { font-size: 16px !important; }
 html.textSizeFour, .textSizeFour body { font-size: 18px !important; }
 html.textSizeFive, .textSizeFive body { font-size: 20px !important; }
 
+body.textSizeOne, .textSizeOne body { font-size: 12px !important; }
+body.textSizeTwo, .textSizeTwo body { font-size: 14px !important; }
+body.textSizeThree, .textSizeThree body { font-size: 16px !important; }
+body.textSizeFour, .textSizeFour body { font-size: 18px !important; }
+body.textSizeFive, .textSizeFive body { font-size: 20px !important; }
+
+
 h1 {
     font-size: 2em;
     line-height: 1.2;
@@ -276,6 +287,7 @@ body {
     -webkit-hyphens: auto !important;
     hyphens: auto !important;
 }
+
 p, span, div {
     font-size: 1em;
     line-height: 1.5 !important;

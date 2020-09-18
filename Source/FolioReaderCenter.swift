@@ -372,14 +372,12 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         self.readerConfig.scrollDirection = direction
         self.collectionViewLayout.scrollDirection = .direction(withConfiguration: self.readerConfig)
         self.currentPage?.setNeedsLayout()
+        self.collectionView.reloadItems(at: self.collectionView.indexPathsForVisibleItems)
         self.collectionView.collectionViewLayout.invalidateLayout()
-        self.collectionView.setContentOffset(frameForPage(self.currentPageNumber).origin, animated: false)
 
         // Page progressive direction
         self.setCollectionViewProgressiveDirection()
         delay(0.2) { self.setPageProgressiveDirection(currentPage) }
-
-
         /**
          *  This delay is needed because the page will not be ready yet
          *  so the delay wait until layout finished the changes.
@@ -396,6 +394,9 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
             let pageOffsetPoint = self.readerConfig.isDirection(CGPoint(x: 0, y: pageOffset), CGPoint(x: pageOffset, y: 0), CGPoint(x: 0, y: pageOffset))
             pageScrollView.setContentOffset(pageOffsetPoint, animated: true)
         }
+        
+        let pageToScroll = self.currentPageNumber
+        delay(0.1) { self.collectionView.setContentOffset(self.frameForPage(pageToScroll).origin, animated: false) }
     }
 
     // MARK: Status bar and Navigation bar
@@ -491,7 +492,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         cell.webView?.frame = cell.webViewFrame()
         cell.delegate = self
         cell.scrollDirection = self.pageScrollDirection
-        cell.backgroundColor = .clear
+        cell.backgroundColor = folioReader.isNight(self.readerConfig.nightModeBackground, UIColor.white)
 
         setPageProgressiveDirection(cell)
 
@@ -506,37 +507,9 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         // Inject CSS
         let documentDirUrl = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
     
-//        let jsFilePath = Bundle.frameworkBundle().path(forResource: "Bridge", ofType: "js")!
-//        let cssFilePath = Bundle.frameworkBundle().path(forResource: "Style", ofType: "css")!
-        
-//        let cssTag = "<link rel=\"stylesheet\" type=\"text/css\" href=\"\(cssFilePath)\"/>"
         let cssTag = "<link rel=\"stylesheet\" type=\"text/css\" href=\"\(URLScheme.bundleFile.path)Style.css\"/>"
-//        let jsTag = "<script type=\"text/javascript\" src=\"\(jsFilePath)\"></script>" +
         let jsTag = "<script type=\"text/javascript\" src=\"\(URLScheme.bundleFile.path)Bridge.js\"></script>" +
         "<script type=\"text/javascript\">setMediaOverlayStyleColors(\(mediaOverlayStyleColors))</script>"
-
-//        let cssString = try! String(contentsOfFile: jsFilePath)
-//        let jsString = try! String(contentsOfFile: cssFilePath)
-        
-//        let cssScript = WKUserScript(source: cssString, injectionTime: .atDocumentStart, forMainFrameOnly: false)
-//        let jsScript = WKUserScript(source: jsString, injectionTime: .atDocumentStart, forMainFrameOnly: false)
-//        cell.webView?.configuration.userContentController.removeAllUserScripts()
-//
-//        cell.webView?.configuration.userContentController.addUserScript(cssScript)
-//        cell.webView?.configuration.userContentController.addUserScript(jsScript)
-        
-//        let source = "window.onload=function () {window.webkit.messageHandlers.sizeNotification.postMessage({justLoaded:true,height: document.body.scrollHeight});};"
-////        let source = "window.onload=function () {window.webkit.messageHandlers.sizeNotification.postMessage({justLoaded:true,height: document.body.scrollHeight});};"
-//        let script = WKUserScript(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-//
-//        let source2 = "document.body.addEventListener('resize', incrementCounter); function incrementCounter() {window.webkit.messageHandlers.sizeNotification.postMessage({height: document.body.scrollHeight});};"
-//        let script2 = WKUserScript(source: source2, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-//        cell.webView?.configuration.userContentController.addUserScript(script2)
-//        cell.webView?.configuration.userContentController.addUserScript(script)
-//
-//        cell.webView?.configuration.userContentController.add(self, name: "sizeNotification")
-//        cell.webView?.configuration.userContentController.add(self, name: "resize")
-
         
         let viewportScriptString = """
         var meta = document.createElement('meta');
@@ -550,20 +523,12 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         document.getElementsByTagName('head')[0].appendChild(meta);
         """
         
-        //meta.setAttribute('column-width', '200px');
-        //meta.setAttribute('content', 'width=device-width');
-        
-//        let viewportScriptString = "var meta = document.createElement('meta'); meta.setAttribute('initial-scale', '1.0'); meta.setAttribute('maximum-scale', '1.0'); meta.setAttribute('minimum-scale', '1.0'); meta.setAttribute('user-scalable', 'no'); document.getElementsByTagName('head')[0].appendChild(meta);"
-        
         let viewportScript = WKUserScript(source: viewportScriptString, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         cell.webView?.configuration.userContentController.addUserScript(viewportScript)
         
         let toInject = "\n\(cssTag)\n\(jsTag)\n</head>"
         html = html.replacingOccurrences(of: "</head>", with: toInject)
         
-//        let toInjectBody = "\n\(cssTag)\n\(jsTag)\n</body>"
-//        html = html.replacingOccurrences(of: "</body>", with: toInjectBody)
-
         // Font class name
         var classes = folioReader.currentFont.cssIdentifier
         classes += " " + folioReader.currentMediaOverlayStyle.className()
@@ -576,9 +541,16 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         // Font Size
         classes += " \(folioReader.currentFontSize.cssIdentifier)"
 
-        html = html.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\" ")
+        if self.readerConfig.scrollDirection == .vertical {
+            html = html.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\" ")
+            
+        } else {
+            let pageHeight = ceil(0.844 * collectionView.bounds.height)
+            
+            html = html.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\" style=\"column-width:\(view.bounds.width)px; height: \(pageHeight)px !important; -webkit-column-gap: 40px; overflow-x:scroll !important;\" ")
+        }
         html = html.replacingOccurrences(of: "<head", with: "<head class=\"\(classes)\" ")
-                        
+        
         // Let the delegate adjust the html string
         if let modifiedHtmlContent = self.delegate?.htmlContentForPage?(cell, htmlContent: html) {
             html = modifiedHtmlContent
@@ -587,10 +559,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         html = htmlContentWithInsertHighlights(html, pageNumber: cell.pageNumber)
         html = html.replacingOccurrences(of: "../", with: URLScheme.localFile.path)
                 
-        let tempPath = documentDirUrl
-        .appendingPathComponent(resource.href.lastPathComponent)//.deletingPathExtension+resource.href.lastPathComponent.pathExtension)
-//            .appendingPathComponent(resource.href.lastPathComponent.deletingPathExtension+"_for_load."+resource.href.lastPathComponent.pathExtension)
-                
+        let tempPath = documentDirUrl.appendingPathComponent(resource.href.lastPathComponent)
         let fileManager = FileManager.default
         
         do {
@@ -805,12 +774,6 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
             } else {
                 self?.pageIndicatorView?.totalMinutes = 0
             }
-//            self?.pagesForCurrentPage(currentPage)
-//
-//            self?.delegate?.pageDidAppear?(currentPage)
-//            self?.delegate?.pageItemChanged?(self?.getCurrentPageItemNumber() ?? 0)
-//
-//            completion?()
         }
         
         self.pagesForCurrentPage(currentPage)
@@ -1460,7 +1423,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         // Perform the page after a short delay as the collection view hasn't completed it's transition if this method is called (the index paths aren't right during fast scrolls).
         delay(0.2, closure: { [weak self] in
             if (self?.readerConfig.scrollDirection == .horizontalWithVerticalContent),
-                let cell = ((scrollView.superview as? UIWebView)?.delegate as? FolioReaderPage) {
+                let cell = ((scrollView.superview as? FolioReaderWebView)?.navigationDelegate as? FolioReaderPage) {
                 let currentIndexPathRow = cell.pageNumber - 1
                 self?.currentWebViewScrollPositions[currentIndexPathRow] = scrollView.contentOffset
             }
@@ -1627,8 +1590,6 @@ extension FolioReaderCenter: FolioReaderPageDelegate {
         
         // Pass the event to the centers `pageDelegate`
         pageDelegate?.pageDidLoad?(page, height: height)
-//        collectionView?.collectionViewLayout.invalidateLayout()
-//        collectionView.reloadData()
     }
     
     public func pageWillLoad(_ page: FolioReaderPage) {
@@ -1681,5 +1642,4 @@ extension FolioReaderCenter: FolioReaderChapterListDelegate {
         
         return bounds
     }
-    
 }
