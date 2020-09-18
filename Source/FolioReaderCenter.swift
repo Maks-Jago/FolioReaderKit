@@ -549,7 +549,6 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
             
             html = html.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\" style=\"column-width:\(view.bounds.width)px; height: \(pageHeight)px !important; -webkit-column-gap: 40px; overflow-x:scroll !important;\" ")
         }
-        html = html.replacingOccurrences(of: "<head", with: "<head class=\"\(classes)\" ")
         
         // Let the delegate adjust the html string
         if let modifiedHtmlContent = self.delegate?.htmlContentForPage?(cell, htmlContent: html) {
@@ -558,7 +557,35 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         
         html = htmlContentWithInsertHighlights(html, pageNumber: cell.pageNumber)
         html = html.replacingOccurrences(of: "../", with: URLScheme.localFile.path)
+
+        do {
+            let regex = try NSRegularExpression(
+                pattern: "<img\\b(?=\\s)(?=(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"][^\\s>]*)*?\\ssrc=['\"]([^\"]*)['\"]?)(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"\\s]*)*\"\\s?\\/?>",
+                options: []
+            )
+            
+            let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
+            let prefixes = URLScheme.allCases.map(\.rawValue)
+            
+            matches.forEach { result in
+                guard let range = Range(result.range, in: html) else {
+                    return
+                }
                 
+                var src = String(html[range])
+                guard let name = src.components(separatedBy: "src=\"").last?.components(separatedBy: "\"").first else {
+                    return
+                }
+                
+                if prefixes.first(where: { name.hasPrefix($0) }) == nil {
+                    src = src.replacingOccurrences(of: name, with: URLScheme.localFile.path + name)
+                    html = html.replacingCharacters(in: range, with: src)
+                }
+            }
+        } catch {
+            print("")
+        }
+        
         let tempPath = documentDirUrl.appendingPathComponent(resource.href.lastPathComponent)
         let fileManager = FileManager.default
         

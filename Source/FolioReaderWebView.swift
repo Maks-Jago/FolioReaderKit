@@ -9,7 +9,7 @@
 import UIKit
 import WebKit
 
-enum URLScheme: String {
+enum URLScheme: String, CaseIterable {
     case localFile = "local-file"
     case bundleFile = "bundle-file"
     
