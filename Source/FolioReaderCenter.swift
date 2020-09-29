@@ -516,7 +516,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         meta.setAttribute('name', 'viewport');
         meta.setAttribute('content', 'width=device-width');
         meta.setAttribute('initial-scale', '1.0');
-        meta.setAttribute('maximum-scale', '1.0');
+        meta.setAttribute('maximum-scale', '4.0');
         meta.setAttribute('minimum-scale', '1.0');
         meta.setAttribute('user-scalable', 'no');
         meta.setAttribute('shrink-to-fit', 'no');
@@ -540,15 +540,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
 
         // Font Size
         classes += " \(folioReader.currentFontSize.cssIdentifier)"
-
-        if self.readerConfig.scrollDirection == .vertical {
-            html = html.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\" ")
-            
-        } else {
-            let pageHeight = ceil(0.844 * collectionView.bounds.height)
-            
-            html = html.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\" style=\"column-width:\(view.bounds.width)px; height: \(pageHeight)px !important; -webkit-column-gap: 40px; overflow-x:scroll !important;\" ")
-        }
+        html = self.configuringHMTLBody(html, classes: classes)
         
         // Let the delegate adjust the html string
         if let modifiedHtmlContent = self.delegate?.htmlContentForPage?(cell, htmlContent: html) {
@@ -558,33 +550,34 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         html = htmlContentWithInsertHighlights(html, pageNumber: cell.pageNumber)
         html = html.replacingOccurrences(of: "../", with: URLScheme.localFile.path)
 
-        do {
-            let regex = try NSRegularExpression(
-                pattern: "<img\\b(?=\\s)(?=(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"][^\\s>]*)*?\\ssrc=['\"]([^\"]*)['\"]?)(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"\\s]*)*\"\\s?\\/?>",
-                options: []
-            )
-            
-            let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
-            let prefixes = URLScheme.allCases.map(\.rawValue)
-            
-            matches.forEach { result in
-                guard let range = Range(result.range, in: html) else {
-                    return
-                }
-                
-                var src = String(html[range])
-                guard let name = src.components(separatedBy: "src=\"").last?.components(separatedBy: "\"").first else {
-                    return
-                }
-                
-                if prefixes.first(where: { name.hasPrefix($0) }) == nil {
-                    src = src.replacingOccurrences(of: name, with: URLScheme.localFile.path + name)
-                    html = html.replacingCharacters(in: range, with: src)
-                }
-            }
-        } catch {
-            print("")
-        }
+        html = (try? configuringImages(html)) ?? html
+//        do {
+//            let regex = try NSRegularExpression(
+//                pattern: "<img\\b(?=\\s)(?=(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"][^\\s>]*)*?\\ssrc=['\"]([^\"]*)['\"]?)(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"\\s]*)*\"\\s?\\/?>",
+//                options: []
+//            )
+//
+//            let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
+//            let prefixes = URLScheme.allCases.map(\.rawValue)
+//
+//            matches.forEach { result in
+//                guard let range = Range(result.range, in: html) else {
+//                    return
+//                }
+//
+//                var src = String(html[range])
+//                guard let name = src.components(separatedBy: "src=\"").last?.components(separatedBy: "\"").first else {
+//                    return
+//                }
+//
+//                if prefixes.first(where: { name.hasPrefix($0) }) == nil {
+//                    src = src.replacingOccurrences(of: name, with: URLScheme.localFile.path + name)
+//                    html = html.replacingCharacters(in: range, with: src)
+//                }
+//            }
+//        } catch {
+//            print("")
+//        }
         
         let tempPath = documentDirUrl.appendingPathComponent(resource.href.lastPathComponent)
         let fileManager = FileManager.default
@@ -605,6 +598,100 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
                 
         cell.loadHTMLString(fromFile: tempPath, baseURL: documentDirUrl)
         return cell
+    }
+    
+    func configuringImages(_ html: String) throws -> String {
+        var html = html
+        let patterns = [
+            "<img\\b(?=\\s)(?=(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"][^\\s>]*)*?\\ssrc=['\"]([^\"]*)['\"]?)(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"\\s]*)*\"\\s?\\/?>",
+            "<image\\b(?=\\s)(?=(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"][^\\s>]*)*?\\sxlink:href=['\"]([^\"]*)['\"]?)(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"\\s]*)*\"\\s?\\/?>",
+        ]
+        
+        for pattern in patterns {
+            let regex = try NSRegularExpression(pattern: pattern,options: [])
+            
+            let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
+            let prefixes = URLScheme.allCases.map(\.rawValue)
+            
+            matches.forEach { result in
+                guard let range = Range(result.range, in: html) else {
+                    return
+                }
+                
+                var src = String(html[range])
+                
+                let separations = ["src=\"", "xlink:href=\""]
+                separations.forEach {
+                    let components = src.components(separatedBy: $0)
+                    
+                    guard components.count > 1 else {
+                        return
+                    }
+                    
+                    guard let name = components.last else {
+                        return
+                    }
+                    
+                    if prefixes.first(where: { name.hasPrefix($0) }) == nil {
+                        src = src.replacingOccurrences(of: name, with: URLScheme.localFile.path + name)
+                        html = html.replacingCharacters(in: range, with: src)
+                    }
+                }
+            }
+        }
+        
+        return html
+    }
+    
+    func configuringHMTLBody(_ html: String, classes: String) -> String {
+        var html = html
+        
+        func replaceBody() {
+            if self.readerConfig.scrollDirection == .vertical {
+                html = html.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\" ")
+
+            } else {
+                let pageHeight = ceil(0.844 * collectionView.bounds.height)
+
+                html = html.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\" style=\"column-width:\(view.bounds.width)px; height: \(pageHeight)px !important; -webkit-column-gap: 40px; overflow-x:scroll !important;\" ")
+            }
+        }
+        
+        func configuringStyle(body: String) -> String {
+            if self.readerConfig.scrollDirection == .vertical {
+                return body
+            } else {
+                let pageHeight = ceil(0.844 * collectionView.bounds.height)
+                let newStyle = "style=\"column-width:\(view.bounds.width)px; height: \(pageHeight)px !important; -webkit-column-gap: 40px; overflow-x:scroll !important;"
+                
+                if body.contains("style") {
+                    return body.replacingOccurrences(of: "style=\"", with: newStyle + " ")
+                }
+                
+                return body.replacingOccurrences(of: ">", with: " " + newStyle + "\">")
+            }
+        }
+        
+        if let bodyStartRange = html.range(of: "<body") {
+            var bodyString = html[bodyStartRange.lowerBound...]
+            
+            if let bodyEndRange = bodyString.range(of: ">") {
+                bodyString = bodyString[...bodyEndRange.lowerBound]
+                
+                var newBody = bodyString.replacingOccurrences(of: "class=\"", with: "class=\"" + classes + " ")
+                newBody = configuringStyle(body: newBody)
+                
+                html = html.replacingOccurrences(of: bodyString, with: newBody)
+                
+            } else {
+                replaceBody()
+            }
+            
+        } else {
+            replaceBody()
+        }
+        
+        return html
     }
     
     private func htmlContentWithInsertHighlights(_ htmlContent: String, pageNumber: Int) -> String {
