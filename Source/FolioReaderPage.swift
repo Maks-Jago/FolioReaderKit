@@ -214,13 +214,13 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
                 return
         }
         
-        guard let url = navigationAction.request.url else { return decisionHandler(.cancel) }
+        guard let url = navigationAction.request.url else { return decisionHandler(.allow) }
 
         if scheme == "highlight" || scheme == "highlight-with-note" {
             shouldShowBar = false
 
             guard let decoded = url.absoluteString.removingPercentEncoding else {
-                decisionHandler(.cancel)
+                decisionHandler(.allow)
                 return
             }
             let index = decoded.index(decoded.startIndex, offsetBy: 12)
@@ -230,11 +230,11 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
             webView.setMenuVisible(true, andRect: rect)
             menuIsVisible = true
 
-            decisionHandler(.cancel)
+            decisionHandler(.allow)
             return
         } else if scheme == "play-audio" {
             guard let decoded = url.absoluteString.removingPercentEncoding else {
-                decisionHandler(.cancel)
+                decisionHandler(.allow)
                 return
             }
             let index = decoded.index(decoded.startIndex, offsetBy: 13)
@@ -243,7 +243,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
             let href = chapter?.href ?? ""
             self.folioReader.readerAudioPlayer?.playAudio(href, fragmentID: playID)
 
-            decisionHandler(.cancel)
+            decisionHandler(.allow)
             return
         } else if (scheme == "file" || scheme == URLScheme.localFile.rawValue) {
 
@@ -310,7 +310,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
             let safariVC = SFSafariViewController(url: url)
             safariVC.view.tintColor = self.readerConfig.tintColor
             self.folioReader.readerCenter?.present(safariVC, animated: true, completion: nil)
-            decisionHandler(.cancel)
+            decisionHandler(.allow)
             return
         } else {
             // Check if the url is a custom class based onClick listerner
@@ -336,11 +336,11 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
                 // Try to open the url with the system if it wasn't a custom class based click listener
                 if UIApplication.shared.canOpenURL(url) {
                     UIApplication.shared.openURL(url)
-                    decisionHandler(.cancel)
+                    decisionHandler(.allow)
                     return
                 }
             } else {
-                decisionHandler(.cancel)
+                decisionHandler(.allow)
                 return
             }
         }

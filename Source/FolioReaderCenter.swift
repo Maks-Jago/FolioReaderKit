@@ -551,33 +551,6 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         html = html.replacingOccurrences(of: "../", with: URLScheme.localFile.path)
 
         html = (try? configuringImages(html)) ?? html
-//        do {
-//            let regex = try NSRegularExpression(
-//                pattern: "<img\\b(?=\\s)(?=(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"][^\\s>]*)*?\\ssrc=['\"]([^\"]*)['\"]?)(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"\\s]*)*\"\\s?\\/?>",
-//                options: []
-//            )
-//
-//            let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
-//            let prefixes = URLScheme.allCases.map(\.rawValue)
-//
-//            matches.forEach { result in
-//                guard let range = Range(result.range, in: html) else {
-//                    return
-//                }
-//
-//                var src = String(html[range])
-//                guard let name = src.components(separatedBy: "src=\"").last?.components(separatedBy: "\"").first else {
-//                    return
-//                }
-//
-//                if prefixes.first(where: { name.hasPrefix($0) }) == nil {
-//                    src = src.replacingOccurrences(of: name, with: URLScheme.localFile.path + name)
-//                    html = html.replacingCharacters(in: range, with: src)
-//                }
-//            }
-//        } catch {
-//            print("")
-//        }
         
         let tempPath = documentDirUrl.appendingPathComponent(resource.href.lastPathComponent)
         let fileManager = FileManager.default
@@ -601,10 +574,11 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     }
     
     func configuringImages(_ html: String) throws -> String {
-        var html = html
+        var htmlResult = html
+        
         let patterns = [
-            "<img\\b(?=\\s)(?=(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"][^\\s>]*)*?\\ssrc=['\"]([^\"]*)['\"]?)(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"\\s]*)*\"\\s?\\/?>",
-            "<image\\b(?=\\s)(?=(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"][^\\s>]*)*?\\sxlink:href=['\"]([^\"]*)['\"]?)(?:[^>=]|='[^']*'|=\"[^\"]*\"|=[^'\"\\s]*)*\"\\s?\\/?>",
+            "<img[^>]*>",
+            "<image[^>]*>"
         ]
         
         for pattern in patterns {
@@ -614,11 +588,14 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
             let prefixes = URLScheme.allCases.map(\.rawValue)
             
             matches.forEach { result in
-                guard let range = Range(result.range, in: html) else {
+                guard let htmlRange = Range(result.range, in: html) else {
                     return
                 }
                 
-                var src = String(html[range])
+                let src = String(html[htmlRange])
+                if src.contains(URLScheme.localFile.path) {
+                    return
+                }
                 
                 let separations = ["src=\"", "xlink:href=\""]
                 separations.forEach {
@@ -633,14 +610,14 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
                     }
                     
                     if prefixes.first(where: { name.hasPrefix($0) }) == nil {
-                        src = src.replacingOccurrences(of: name, with: URLScheme.localFile.path + name)
-                        html = html.replacingCharacters(in: range, with: src)
+                        let replacedString = src.replacingOccurrences(of: $0 + name, with: $0 + URLScheme.localFile.path + name)
+                        htmlResult = htmlResult.replacingOccurrences(of: src, with: replacedString)
                     }
                 }
             }
         }
         
-        return html
+        return htmlResult
     }
     
     func configuringHMTLBody(_ html: String, classes: String) -> String {
