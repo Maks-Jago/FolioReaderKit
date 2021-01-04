@@ -21,9 +21,12 @@ enum URLScheme: String, CaseIterable {
 @available(iOS 11.0, *)
 open class BundleFilesHandler: NSObject, WKURLSchemeHandler {
     public var bundle: Bundle
+    public var dataDecryptor: (Data) -> Data
     
-    init(bundle: Bundle = .main) {
+    init(bundle: Bundle = .main, dataDecryptor: @escaping (Data) -> Data) {
         self.bundle = bundle
+        self.dataDecryptor = dataDecryptor
+        super.init()
     }
     
     public func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
@@ -38,10 +41,11 @@ open class BundleFilesHandler: NSObject, WKURLSchemeHandler {
             return
         }
         
-        guard let data = try? Data(contentsOf: fileUrl) else {
+        guard var data = try? Data(contentsOf: fileUrl) else {
             return
         }
         
+        data = dataDecryptor(data)
         let response = URLResponse(
             url: urlSchemeTask.request.url!,
             mimeType: url.mimeType(),
@@ -60,6 +64,12 @@ open class BundleFilesHandler: NSObject, WKURLSchemeHandler {
 @available(iOS 11.0, *)
 open class LocalFilesHandler: NSObject, WKURLSchemeHandler {
     public var resource: FRResource?
+    public var dataDecryptor: (Data) -> Data
+    
+    public init(dataDecryptor: @escaping (Data) -> Data) {
+        self.dataDecryptor = dataDecryptor
+        super.init()
+    }
     
     public func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
         guard let resource = resource, let url = urlSchemeTask.request.url, let scheme = url.scheme else {
@@ -71,10 +81,11 @@ open class LocalFilesHandler: NSObject, WKURLSchemeHandler {
         let fileRelativePath = url.absoluteString.replacingOccurrences(of: scheme + "://", with: "")
         let fileURL = basePath.appendingPathComponent(fileRelativePath)
         
-        guard let data = try? Data(contentsOf: fileURL) else {
+        guard var data = try? Data(contentsOf: fileURL) else {
             return
         }
         
+        data = dataDecryptor(data)
         let response = URLResponse(
             url: urlSchemeTask.request.url!,
             mimeType: url.mimeType(),
@@ -122,8 +133,8 @@ open class FolioReaderWebView: WKWebView {
         
         if #available(iOS 11.0, *) {
             configuration.dataDetectorTypes = .link
-            configuration.setURLSchemeHandler(LocalFilesHandler(), forURLScheme: URLScheme.localFile.rawValue)
-            configuration.setURLSchemeHandler(BundleFilesHandler(bundle: Bundle.frameworkBundle()), forURLScheme: URLScheme.bundleFile.rawValue)
+            configuration.setURLSchemeHandler(LocalFilesHandler(dataDecryptor: readerContainer.dataDecryptor), forURLScheme: URLScheme.localFile.rawValue)
+            configuration.setURLSchemeHandler(BundleFilesHandler(bundle: Bundle.frameworkBundle(), dataDecryptor: readerContainer.dataDecryptor), forURLScheme: URLScheme.bundleFile.rawValue)
         }
         
         super.init(frame: frame, configuration: configuration)

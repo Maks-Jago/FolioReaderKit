@@ -69,6 +69,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     var currentPageNumber: Int = 0
     var pageWidth: CGFloat = 0.0
     var pageHeight: CGFloat = 0.0
+    var dataDecryptor: (Data) -> Data = { $0 }
     
     fileprivate var screenBounds: CGRect!
     fileprivate var pageOffsetRate: CGFloat = 0
@@ -94,8 +95,9 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
 
     // MARK: - Init
 
-    init(withContainer readerContainer: FolioReaderContainer) {
+    init(withContainer readerContainer: FolioReaderContainer, dataDecryptor: @escaping (Data) -> Data = { $0 }) {
         self.readerContainer = readerContainer
+        self.dataDecryptor = dataDecryptor
         super.init(nibName: nil, bundle: Bundle.frameworkBundle())
 
         self.initialization()
@@ -498,7 +500,13 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
 
         // Configure the cell
         let resource = self.book.spine.spineReferences[indexPath.row].resource
-        guard var html = try? String(contentsOfFile: resource.fullHref, encoding: String.Encoding.utf8) else {
+    
+        guard var htmlData = try? Data(contentsOf: URL(fileURLWithPath: resource.fullHref)) else {
+            return cell
+        }
+        
+        htmlData = dataDecryptor(htmlData)
+        guard var html = String(data: htmlData, encoding: .utf8) else {
             return cell
         }
 

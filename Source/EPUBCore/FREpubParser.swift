@@ -20,7 +20,14 @@ class FREpubParser: NSObject, SSZipArchiveDelegate {
     private var resourcesBasePath = ""
     private var shouldRemoveEpub = true
     private var epubPathToRemove: String?
+    public var dataDecryptor: (Data) -> Data
 
+    init(dataDecryptor: @escaping (Data) -> Data = { $0 }) {
+        self.dataDecryptor = dataDecryptor
+        super.init()
+    }
+    
+    
     /// Parse the Cover Image from an epub file.
     ///
     /// - Parameters:
@@ -122,7 +129,9 @@ class FREpubParser: NSObject, SSZipArchiveDelegate {
     /// - Throws: `FolioReaderError`
     private func readContainer(with bookBasePath: String) throws {
         let containerPath = "META-INF/container.xml"
-        let containerData = try Data(contentsOf: URL(fileURLWithPath: bookBasePath.appendingPathComponent(containerPath)), options: .alwaysMapped)
+        var containerData = try Data(contentsOf: URL(fileURLWithPath: bookBasePath.appendingPathComponent(containerPath)), options: .alwaysMapped)
+        containerData = dataDecryptor(containerData)
+        
         let xmlDoc = try AEXMLDocument(xml: containerData)
         let opfResource = FRResource()
         opfResource.href = xmlDoc.root["rootfiles"]["rootfile"].attributes["full-path"]
@@ -142,7 +151,8 @@ class FREpubParser: NSObject, SSZipArchiveDelegate {
         let opfPath = bookBasePath.appendingPathComponent(book.opfResource.href)
         var identifier: String?
 
-        let opfData = try Data(contentsOf: URL(fileURLWithPath: opfPath), options: .alwaysMapped)
+        var opfData = try Data(contentsOf: URL(fileURLWithPath: opfPath), options: .alwaysMapped)
+        opfData = dataDecryptor(opfData)
         let xmlDoc = try AEXMLDocument(xml: opfData)
 
         // Base OPF info
@@ -222,7 +232,9 @@ class FREpubParser: NSObject, SSZipArchiveDelegate {
     /// - Parameter resource: A `FRResource` to read the smill
     private func readSmilFile(_ resource: FRResource) {
         do {
-            let smilData = try Data(contentsOf: URL(fileURLWithPath: resource.fullHref), options: .alwaysMapped)
+            var smilData = try Data(contentsOf: URL(fileURLWithPath: resource.fullHref), options: .alwaysMapped)
+            smilData = self.dataDecryptor(smilData)
+            
             var smilFile = FRSmilFile(resource: resource)
             let xmlDoc = try AEXMLDocument(xml: smilData)
 
@@ -267,13 +279,17 @@ class FREpubParser: NSObject, SSZipArchiveDelegate {
 
         do {
             if tocResource.mediaType == MediaType.ncx {
-                let ncxData = try Data(contentsOf: URL(fileURLWithPath: tocPath), options: .alwaysMapped)
+                var ncxData = try Data(contentsOf: URL(fileURLWithPath: tocPath), options: .alwaysMapped)
+                ncxData = self.dataDecryptor(ncxData)
+                
                 let xmlDoc = try AEXMLDocument(xml: ncxData)
                 if let itemsList = xmlDoc.root["navMap"]["navPoint"].all {
                     tocItems = itemsList
                 }
             } else {
-                let tocData = try Data(contentsOf: URL(fileURLWithPath: tocPath), options: .alwaysMapped)
+                var tocData = try Data(contentsOf: URL(fileURLWithPath: tocPath), options: .alwaysMapped)
+                tocData = self.dataDecryptor(tocData)
+                
                 let xmlDoc = try AEXMLDocument(xml: tocData)
 
                 if let nav = xmlDoc.root["body"]["nav"].first, let itemsList = nav["ol"]["li"].all {

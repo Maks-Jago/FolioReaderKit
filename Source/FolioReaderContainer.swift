@@ -51,6 +51,7 @@ open class FolioReaderContainer: UIViewController {
     public var folioReader: FolioReader
 
     fileprivate var errorOnLoad = false
+    public var dataDecryptor: (Data) -> Data = { $0 }
 
     // MARK: - Init
 
@@ -62,7 +63,8 @@ open class FolioReaderContainer: UIViewController {
     ///   - path: The ePub path on system. Must not be nil nor empty string.
 	///   - unzipPath: Path to unzip the compressed epub.
     ///   - removeEpub: Should delete the original file after unzip? Default to `true` so the ePub will be unziped only once.
-    public init(withConfig config: FolioReaderConfig, folioReader: FolioReader, epubPath path: String, unzipPath: String? = nil, removeEpub: Bool = true) {
+    public init(withConfig config: FolioReaderConfig, folioReader: FolioReader, epubPath path: String, unzipPath: String? = nil, removeEpub: Bool = true, dataDecryptor: @escaping (Data) -> Data) {
+        self.dataDecryptor = dataDecryptor
         self.readerConfig = config
         self.folioReader = folioReader
         self.epubPath = path
@@ -154,6 +156,7 @@ open class FolioReaderContainer: UIViewController {
         self.readerConfig.shouldHideNavigationOnTap = ((hideBars == true) ? true : self.readerConfig.shouldHideNavigationOnTap)
 
         self.centerViewController = FolioReaderCenter(withContainer: self)
+        self.centerViewController?.dataDecryptor = self.dataDecryptor
 
         if let rootViewController = self.centerViewController {
             if #available(iOS 13.0, *) {
@@ -189,7 +192,7 @@ open class FolioReaderContainer: UIViewController {
         DispatchQueue.global(qos: .userInitiated).async {
 
             do {
-                let parsedBook = try FREpubParser().readEpub(epubPath: self.epubPath, removeEpub: self.shouldRemoveEpub, unzipPath: self.unzipPath)
+                let parsedBook = try FREpubParser(dataDecryptor: self.dataDecryptor).readEpub(epubPath: self.epubPath, removeEpub: self.shouldRemoveEpub, unzipPath: self.unzipPath)
                 self.book = parsedBook
                 self.folioReader.isReaderOpen = true
 
