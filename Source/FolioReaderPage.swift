@@ -49,7 +49,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
     fileprivate var menuIsVisible = false
     var scrollDirection: ScrollDirection = .up
     private var firstLoading: Bool = true
-    private var currentHTMLFileURL: URL? = nil
+    public var currentHTMLFileURL: URL? = nil
     
     fileprivate var readerConfig: FolioReaderConfig {
         guard let readerContainer = readerContainer else { return FolioReaderConfig() }

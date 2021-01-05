@@ -1689,6 +1689,14 @@ extension FolioReaderCenter: FolioReaderPageDelegate {
         
         // Pass the event to the centers `pageDelegate`
         pageDelegate?.pageDidLoad?(page, height: height)
+        
+        if let fileURL = page.currentHTMLFileURL {
+            do {
+                try FileManager.default.removeItem(at: fileURL)
+            } catch {
+                print(error)
+            }
+        }
     }
     
     public func pageWillLoad(_ page: FolioReaderPage) {
