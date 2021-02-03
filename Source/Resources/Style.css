@@ -233,7 +233,7 @@ body.nightMode, body.nightMode body {
     background-color: #131313 !important;
 }
 
-.nightMode p, .nightMode div, .nightMode span:not(.epub-media-overlay-playing) {
+.nightMode p, .nightMode div, .nightMode li, .nightMode span:not(.epub-media-overlay-playing) {
     color: #767676 !important;
     background-color: transparent !important;
 }

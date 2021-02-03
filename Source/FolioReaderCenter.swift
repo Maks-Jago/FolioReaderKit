@@ -664,6 +664,10 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
                 bodyString = bodyString[...bodyEndRange.lowerBound]
                 
                 var newBody = bodyString.replacingOccurrences(of: "class=\"", with: "class=\"" + classes + " ")
+                if !newBody.contains("class") {
+                    newBody = newBody.replacingOccurrences(of: "<body", with: "<body class=\"\(classes)\"")
+                }
+                
                 newBody = configuringStyle(body: newBody)
                 
                 html = html.replacingOccurrences(of: bodyString, with: newBody)
