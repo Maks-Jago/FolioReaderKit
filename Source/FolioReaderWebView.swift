@@ -76,12 +76,13 @@ open class LocalFilesHandler: NSObject, WKURLSchemeHandler {
             urlSchemeTask.didFailWithError(NSError(domain: URLScheme.localFile.rawValue, code: -1, userInfo: nil))
             return
         }
-        
+
         let basePath = URL(fileURLWithPath: resource.fullHref.replacingOccurrences(of: resource.href, with: ""))
         let fileRelativePath = url.absoluteString.replacingOccurrences(of: scheme + "://", with: "")
         let fileURL = basePath.appendingPathComponent(fileRelativePath)
-        
+
         guard var data = try? Data(contentsOf: fileURL) else {
+            urlSchemeTask.didFailWithError(NSError(domain: URLScheme.localFile.rawValue, code: -1, userInfo: nil))
             return
         }
         
