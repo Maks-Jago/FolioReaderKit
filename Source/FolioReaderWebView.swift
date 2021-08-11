@@ -79,7 +79,16 @@ open class LocalFilesHandler: NSObject, WKURLSchemeHandler {
 
         let basePath = URL(fileURLWithPath: resource.fullHref.replacingOccurrences(of: resource.href, with: ""))
         let fileRelativePath = url.absoluteString.replacingOccurrences(of: scheme + "://", with: "")
-        let fileURL = basePath.appendingPathComponent(fileRelativePath)
+        var fileURL = basePath.appendingPathComponent(fileRelativePath)
+
+        if !FileManager.default.fileExists(atPath: fileURL.absoluteString) {
+            fileURL = URL(fileURLWithPath: resource.fullHref.deletingLastPathComponent.deletingLastPathComponent + "/" + fileURL.lastPathComponent)
+        }
+
+//        if fileURL.absoluteString.contains("css") {
+//            urlSchemeTask.didFailWithError(NSError(domain: URLScheme.localFile.rawValue, code: -1, userInfo: nil))
+//            return
+//        }
 
         guard var data = try? Data(contentsOf: fileURL) else {
             urlSchemeTask.didFailWithError(NSError(domain: URLScheme.localFile.rawValue, code: -1, userInfo: nil))
