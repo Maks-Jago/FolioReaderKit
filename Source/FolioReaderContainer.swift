@@ -26,6 +26,7 @@ class FolioReaderNavigationBar: UINavigationBar {
         coloredAppearance.backgroundColor = .white
         
         self.standardAppearance = coloredAppearance
+        self.scrollEdgeAppearance = coloredAppearance
     }
 
     required init?(coder: NSCoder) {
