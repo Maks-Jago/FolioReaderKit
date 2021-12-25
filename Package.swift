@@ -1,4 +1,4 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.4
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -15,7 +15,7 @@ let package = Package(
             targets: ["FolioReaderKit"]),
     ],
     dependencies: [
-        .package(name: "ZipArchive", url: "https://github.com/Maks-Jago/ZipArchive.git", .branch("master")),
+        .package(name: "ZipArchive", url: "https://github.com/Maks-Jago/ZipArchive.git", .exact("2.2.4")),
         .package(name: "MenuItemKit", url: "https://github.com/cxa/MenuItemKit.git", .exact("4.0.1")),
         .package(name: "ZFDragableModalTransition", url: "https://github.com/Maks-Jago/ZFDragableModalTransition.git", .branch("master")),
         .package(name: "AEXML", url: "https://github.com/tadija/AEXML.git", from: "4.2.2"),

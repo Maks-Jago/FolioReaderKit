@@ -59,9 +59,9 @@
         "package": "ZipArchive",
         "repositoryURL": "https://github.com/Maks-Jago/ZipArchive.git",
         "state": {
-          "branch": "master",
-          "revision": "f09c0f589bb90765e0b3a00cd0ed03d5be394c76",
-          "version": null
+          "branch": null,
+          "revision": "7cff8c92634cad348e0b09aa19b8a61ac8d8ede9",
+          "version": "2.2.4"
         }
       }
     ]
