@@ -141,7 +141,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         collectionViewLayout.minimumInteritemSpacing = 0
         collectionViewLayout.scrollDirection = .direction(withConfiguration: self.readerConfig)
         
-        let background = folioReader.isNight(self.readerConfig.nightModeBackground, UIColor.white)
+        let background = folioReader.isNight(self.readerConfig.nightModeBackground, self.readerConfig.daysModeBackground)//UIColor.white)
         view.backgroundColor = background
 
         // CollectionView
@@ -494,7 +494,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         cell.webView?.frame = cell.webViewFrame()
         cell.delegate = self
         cell.scrollDirection = self.pageScrollDirection
-        cell.backgroundColor = folioReader.isNight(self.readerConfig.nightModeBackground, UIColor.white)
+        cell.backgroundColor = folioReader.isNight(self.readerConfig.nightModeBackground, self.readerConfig.daysModeBackground)// UIColor.white)
 
         setPageProgressiveDirection(cell)
 

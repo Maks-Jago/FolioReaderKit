@@ -301,6 +301,8 @@ body {
     word-break: break-word !important;
     -webkit-hyphens: auto !important;
     hyphens: auto !important;
+
+    background-color: #F5EFDD !important;
 }
 
 p, span, div {

@@ -95,7 +95,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
 
         if colorView == nil {
             colorView = UIView()
-            colorView.backgroundColor = self.readerConfig.nightModeBackground
+            colorView.backgroundColor = folioReader.isNight(self.readerConfig.nightModeBackground, self.readerConfig.daysModeBackground) //self.readerConfig.nightModeBackground
             webView?.scrollView.addSubview(colorView)
         }
 
