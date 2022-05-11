@@ -48,7 +48,6 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
     fileprivate var shouldShowBar = true
     fileprivate var menuIsVisible = false
     var scrollDirection: ScrollDirection = .up
-    private var firstLoading: Bool = true
     public var currentHTMLFileURL: URL? = nil
     
     fileprivate var readerConfig: FolioReaderConfig {
@@ -382,7 +381,21 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
     
     @objc open func handleTapGesture(_ recognizer: UITapGestureRecognizer) {
         self.delegate?.pageTap?(recognizer)
-        
+
+        if self.folioReader.readerContainer?.readerConfig.scrollDirection.collectionViewScrollDirection() == .horizontal {
+            let location = recognizer.location(in: self)
+
+            if location.x > self.frame.width * 0.95 {
+                self.folioReader.readerCenter?.changePageItemToNext()
+                print("next page")
+                return
+            } else if location.x < self.frame.width * 0.05 {
+                print("prev page")
+                self.folioReader.readerCenter?.changePageItemToPrevious()
+                return
+            }
+        }
+
         if let _navigationController = self.folioReader.readerCenter?.navigationController, (_navigationController.isNavigationBarHidden == true) {
             //WebViewMigration:
             webView?.js("getSelectedText()", completion: { res in
@@ -406,6 +419,10 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
             self.folioReader.readerCenter?.hideBars()
             self.menuIsVisible = false
         }
+
+//        self.folioReader.
+//        changePageToNext(nil)
+
     }
 
     // MARK: - Public scroll postion setter

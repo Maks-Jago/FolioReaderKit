@@ -429,17 +429,19 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         self.updateBarsStatus(shouldHide)
     }
 
-    private func updateBarsStatus(_ shouldHide: Bool, shouldShowIndicator: Bool = false) {
+    private func updateBarsStatus(_ shouldHide: Bool) {
         guard let readerContainer = readerContainer else { return }
         readerContainer.shouldHideStatusBar = shouldHide
 
         UIView.animate(withDuration: 0.25, animations: {
             readerContainer.setNeedsStatusBarAppearanceUpdate()
 
+            self.pageIndicatorView?.alpha = shouldHide ? 0 : 1
+
             // Show minutes indicator
-            if (shouldShowIndicator == true) {
-                self.pageIndicatorView?.minutesLabel.alpha = shouldHide ? 0 : 1
-            }
+//            if (shouldShowIndicator == true) {
+//                self.pageIndicatorView?.minutesLabel.alpha = shouldHide ? 0 : 1
+//            }
         })
         self.navigationController?.setNavigationBarHidden(shouldHide, animated: true)
     }
@@ -1112,7 +1114,13 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         let contentOffsetX = contentOffset.x - cellSize.width
         
         if contentOffsetX < 0 {
-            changePageToPrevious(completion)
+            if
+                let folioPage = collectionView.cellForItem(at: IndexPath(row: getCurrentIndexPath().row - 1, section: 0)) as? FolioReaderPage,
+                folioPage.webView?.scrollView.contentSize != .zero {
+                print("lazy prev")
+            } else {
+                changePageToPrevious(completion)
+            }
         } else {
             cell.scrollPageToOffset(contentOffsetX, animated: true)
         }
@@ -1479,7 +1487,8 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
 
     open func scrollViewDidScroll(_ scrollView: UIScrollView) {
         if (navigationController?.isNavigationBarHidden == false) {
-            self.toggleBars()
+//            self.toggleBars()
+            self.configureNavBar()
         }
 
         scrollScrubber?.scrollViewDidScroll(scrollView)
@@ -1601,7 +1610,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
      */
     @objc func presentFontsMenu() {
         folioReader.saveReaderState()
-        hideBars()
+//        hideBars()
 
         let menu = FolioReaderFontsMenu(folioReader: folioReader, readerConfig: readerConfig)
         menu.modalPresentationStyle = .overCurrentContext
