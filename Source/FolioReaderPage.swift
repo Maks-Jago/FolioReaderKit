@@ -158,9 +158,8 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
     }
 
     // MARK: - WKWebView Delegate
-        
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        contentDidLoad()
+        self.contentDidLoad()
     }
     
     func contentDidLoad() {
@@ -184,6 +183,9 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         if scrollDirection == .down && folioReader.readerCenter?.isScrolling == true {
             needScrollToBottom = true
         } else if scrollDirection == .right, folioReader.readerCenter?.recentlyScrolled == true {
+            needScrollToBottom = true
+        } else if self.folioReader.readerCenter?.readerContainer?.readerConfig.scrollDirection.collectionViewScrollDirection() == .horizontal, self.folioReader.readerCenter?.scrollToLastPageItemAfterDidLoad == true {
+            self.folioReader.readerCenter?.scrollToLastPageItemAfterDidLoad = false
             needScrollToBottom = true
         }
         
@@ -382,14 +384,13 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
     @objc open func handleTapGesture(_ recognizer: UITapGestureRecognizer) {
         self.delegate?.pageTap?(recognizer)
 
+        let location = recognizer.location(in: self)
         if self.folioReader.readerContainer?.readerConfig.scrollDirection.collectionViewScrollDirection() == .horizontal {
-            let location = recognizer.location(in: self)
-
-            if location.x > self.frame.width * 0.95 {
+            if location.x > self.frame.width * 0.93 {
                 self.folioReader.readerCenter?.changePageItemToNext()
                 print("next page")
                 return
-            } else if location.x < self.frame.width * 0.05 {
+            } else if location.x < self.frame.width * 0.07 {
                 print("prev page")
                 self.folioReader.readerCenter?.changePageItemToPrevious()
                 return
@@ -397,32 +398,18 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         }
 
         if let _navigationController = self.folioReader.readerCenter?.navigationController, (_navigationController.isNavigationBarHidden == true) {
-            //WebViewMigration:
-            webView?.js("getSelectedText()", completion: { res in
-                let selected = res as? String
-                
-                guard (selected == nil || selected?.isEmpty == true) else {
-                    return
-                }
-                
-                let delay = 0.4 * Double(NSEC_PER_SEC) // 0.4 seconds * nanoseconds per seconds
-                let dispatchTime = (DispatchTime.now() + (Double(Int64(delay)) / Double(NSEC_PER_SEC)))
-                
-                DispatchQueue.main.asyncAfter(deadline: dispatchTime, execute: {
-                    if (self.shouldShowBar == true && self.menuIsVisible == false) {
+            if self.shouldShowBar == true, self.menuIsVisible == false {
+                if location.y < self.frame.height * 0.15 || location.y > self.frame.height * 0.96 {
+                    DispatchQueue.main.async {
                         self.folioReader.readerCenter?.toggleBars()
                     }
-                })
-            })
+                }
+            }
             
         } else if (self.readerConfig.shouldHideNavigationOnTap == true) {
             self.folioReader.readerCenter?.hideBars()
             self.menuIsVisible = false
         }
-
-//        self.folioReader.
-//        changePageToNext(nil)
-
     }
 
     // MARK: - Public scroll postion setter
@@ -442,7 +429,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
      Scrolls the page to bottom
      */
         
-    open func scrollPageToBottom() {
+    open func scrollPageToBottom(_ animated: Bool = false) {
         //WebViewMigration: disable scroll
         guard let webView = webView else { return }
         
@@ -454,27 +441,13 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         }
         
         if bottomOffset.forDirection(withConfiguration: self.readerConfig) >= 0 {
-            DispatchQueue.main.async {
-                self.webView?.scrollView.setContentOffset(bottomOffset, animated: false)
+            delay(0.1) {
+                if self.scrollDirection != .down {
+                    bottomOffset = CGPoint(x: webView.scrollView.contentSize.width - webView.scrollView.bounds.width, y: 0)
+                }
+                self.webView?.scrollView.setContentOffset(bottomOffset, animated: animated)
             }
         }
-        
-//        guard let webView = webView else { return }
-//
-//        var bottomOffset: CGPoint = .zero
-//        if scrollDirection == .down {
-//            let y = (superview as? UICollectionView)?.contentOffset.y ?? 0
-//            let superHeight = (superview as? UICollectionView)?.bounds.height ?? 0
-//            bottomOffset = CGPoint(x: 0, y: y + self.bounds.height - superHeight) //webView.scrollView.contentSize.height - webView.scrollView.bounds.height)
-//        } else {
-//            bottomOffset = CGPoint(x: webView.scrollView.contentSize.width - webView.scrollView.bounds.width, y: 0)
-//        }
-//
-//        if bottomOffset.forDirection(withConfiguration: self.readerConfig) >= 0 {
-//            DispatchQueue.main.async {
-//                (self.superview as? UICollectionView)?.setContentOffset(bottomOffset, animated: false)
-//            }
-//        }
     }
 
     /**

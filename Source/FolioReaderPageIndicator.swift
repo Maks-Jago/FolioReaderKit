@@ -58,7 +58,7 @@ class FolioReaderPageIndicator: UIView {
         chaptersLabel = UILabel(frame: .zero) //CGRect(origin: CGPoint(x: 10, y: 0), size: .zero))
         chaptersLabel.font = UIFont(name: "Avenir-Light", size: 10)!
         chaptersLabel.textAlignment = .left
-        chaptersLabel.alpha = 0
+//        chaptersLabel.alpha = 0
         addSubview(chaptersLabel)
     }
 

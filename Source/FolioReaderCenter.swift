@@ -70,6 +70,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     var pageWidth: CGFloat = 0.0
     var pageHeight: CGFloat = 0.0
     var dataDecryptor: (Data) -> Data = { $0 }
+    var scrollToLastPageItemAfterDidLoad: Bool = false
     
     fileprivate var screenBounds: CGRect!
     fileprivate var pageOffsetRate: CGFloat = 0
@@ -437,6 +438,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
             readerContainer.setNeedsStatusBarAppearanceUpdate()
 
             self.pageIndicatorView?.alpha = shouldHide ? 0 : 1
+//            self.pageIndicatorView?.minutesLabel.alpha = shouldHide ? 0 : 1
 
             // Show minutes indicator
 //            if (shouldShowIndicator == true) {
@@ -1036,15 +1038,35 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     }
 
     public func changePageToNext(_ completion: (() -> Void)? = nil) {
-        changePageWith(page: self.nextPageNumber, animated: true) { () -> Void in
+        guard nextPageNumber - 1 < totalPages else {
             completion?()
+            return
         }
+
+        let indexPath = IndexPath(row: nextPageNumber-1, section: 0)
+        let nextCell = collectionView.cellForItem(at: indexPath) as? FolioReaderPage
+
+        changePageWith(indexPath: indexPath, animated: true, completion: { () -> Void in
+            self.updateCurrentPage(nextCell) {
+                completion?()
+            }
+        })
     }
 
     public func changePageToPrevious(_ completion: (() -> Void)? = nil) {
-        changePageWith(page: self.previousPageNumber, animated: true) { () -> Void in
+        guard previousPageNumber - 1 > 0 else {
             completion?()
+            return
         }
+
+        let indexPath = IndexPath(row: previousPageNumber-1, section: 0)
+        let previousCell = collectionView.cellForItem(at: indexPath) as? FolioReaderPage
+
+        changePageWith(indexPath: indexPath, animated: true, completion: { () -> Void in
+            self.updateCurrentPage(previousCell) {
+                completion?()
+            }
+        })
     }
     
     public func changePageItemToNext(_ completion: (() -> Void)? = nil) {
@@ -1059,8 +1081,8 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         }
         
         let cellSize = cell.frame.size
-        let contentOffsetX = contentOffset.x + cellSize.width
-        
+        let contentOffsetX = CGFloat(ceilf(Float(((contentOffset.x / cellSize.width) + 1)))) * cellSize.width
+
         if contentOffsetX >= contentOffsetXLimit {
             changePageToNext(completion)
         } else {
@@ -1103,6 +1125,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
     public func changePageItemToPrevious(_ completion: (() -> Void)? = nil) {
         // TODO: It was implemented for horizontal orientation.
         // Need check page orientation (v/h) and make correct calc for vertical
+
         guard
             let cell = collectionView.cellForItem(at: getCurrentIndexPath()) as? FolioReaderPage,
             let contentOffset = cell.webView?.scrollView.contentOffset else {
@@ -1111,16 +1134,16 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         }
         
         let cellSize = cell.frame.size
-        let contentOffsetX = contentOffset.x - cellSize.width
+        let contentOffsetX = CGFloat(ceilf(Float(((contentOffset.x / cellSize.width) - 1)))) * cellSize.width
         
         if contentOffsetX < 0 {
-            if
-                let folioPage = collectionView.cellForItem(at: IndexPath(row: getCurrentIndexPath().row - 1, section: 0)) as? FolioReaderPage,
-                folioPage.webView?.scrollView.contentSize != .zero {
-                print("lazy prev")
-            } else {
-                changePageToPrevious(completion)
+            let contentSize: CGSize = (collectionView.cellForItem(at: IndexPath(row: getCurrentIndexPath().row - 1, section: 0)) as? FolioReaderPage)?.webView?.scrollView.contentSize ?? .zero
+
+            if contentSize == .zero {
+                self.scrollToLastPageItemAfterDidLoad = true
             }
+
+            changePageToPrevious(completion)
         } else {
             cell.scrollPageToOffset(contentOffsetX, animated: true)
         }
@@ -1148,7 +1171,7 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         if contentOffsetX < 0 {
             contentOffsetX = 0
         }
-        
+
         cell.scrollPageToOffset(contentOffsetX, animated: animated)
         
         completion?()
@@ -1679,7 +1702,9 @@ extension FolioReaderCenter: FolioReaderPageDelegate {
                 isFirstLoad = false
 
                 if (self.currentPageNumber == pageNumber && pageOffset > 0) {
-                    page.scrollPageToOffset(pageOffset!, animated: false)
+                    delay(0.1) {
+                        page.scrollPageToOffset(pageOffset!, animated: false)
+                    }
                 }
             } else if (self.isScrolling == false && folioReader.needsRTLChange == true) {
                 page.scrollPageToBottom()
