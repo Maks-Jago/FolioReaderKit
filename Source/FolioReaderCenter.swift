@@ -1151,6 +1151,18 @@ open class FolioReaderCenter: UIViewController, UICollectionViewDelegate, UIColl
         completion?()
     }
 
+    open override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+
+        for touch in touches {
+            let location = touch.location(in: view)
+            if self.readerContainer?.readerConfig.shouldHideNavigationOnTap == true, navigationController?.isNavigationBarHidden == true, location.y <= view.bounds.height * 0.11 {
+                self.toggleBars()
+                break
+            }
+        }
+    }
+
     public func changePageItemToLast(animated: Bool = true, _ completion: (() -> Void)? = nil) {
         // TODO: It was implemented for horizontal orientation.
         // Need check page orientation (v/h) and make correct calc for vertical

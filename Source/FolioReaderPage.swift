@@ -158,6 +158,7 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
     }
 
     // MARK: - WKWebView Delegate
+
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         self.contentDidLoad()
     }
@@ -388,18 +389,16 @@ open class FolioReaderPage: UICollectionViewCell, WKNavigationDelegate, WKUIDele
         if self.folioReader.readerContainer?.readerConfig.scrollDirection.collectionViewScrollDirection() == .horizontal {
             if location.x > self.frame.width * 0.93 {
                 self.folioReader.readerCenter?.changePageItemToNext()
-                print("next page")
                 return
             } else if location.x < self.frame.width * 0.07 {
-                print("prev page")
                 self.folioReader.readerCenter?.changePageItemToPrevious()
                 return
             }
         }
 
-        if let _navigationController = self.folioReader.readerCenter?.navigationController, (_navigationController.isNavigationBarHidden == true) {
+        if let _navigationController = self.folioReader.readerCenter?.navigationController, _navigationController.isNavigationBarHidden == true {
             if self.shouldShowBar == true, self.menuIsVisible == false {
-                if location.y < self.frame.height * 0.15 || location.y > self.frame.height * 0.96 {
+                if location.y < self.frame.height * 0.05 || location.y > self.frame.height * 0.96 {
                     DispatchQueue.main.async {
                         self.folioReader.readerCenter?.toggleBars()
                     }
